@@ -1,0 +1,1268 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Piter Music</title>
+<meta name="robots" content="noindex">
+<script>
+  // ===== Аналитика: Яндекс Метрика =====
+  // Номер счётчика (metrika.yandex.ru). Поставьте 0, чтобы выключить метрику.
+  window.METRIKA_ID = 113474600;
+  if (window.METRIKA_ID) {
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=' + window.METRIKA_ID, 'ym');
+    ym(window.METRIKA_ID, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+  }
+  // Цели: каждое действие в концепте отправляется в Метрику как цель с параметрами
+  window.track = function (goal, params) {
+    try { if (window.METRIKA_ID && window.ym) window.ym(window.METRIKA_ID, "reachGoal", goal, params || {}); } catch (e) {}
+  };
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/113474600" style="position:absolute; left:-9999px;" alt=""></div></noscript>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: app shell. Main view = list of spots grouped by metro line (like the VK discussions) + the selected spot: day timeline per place, bookings, rules, chat. */
+:root {
+  --paper: #ECEFF2;
+  --surface: #FAFBFC;
+  --ink: #15202B;
+  --muted: #586572;
+  --line: #D2D9DF;
+  --ochre: #D3921A;
+  --ochre-soft: #F6E3BC;
+  --on-ochre: #1D1608;
+  --neva: #2D5B7A;
+  --neva-soft: #DCE6EE;
+  --ok: #2B7A4B;
+  --ok-soft: #DCEFE3;
+  --danger: #B0392C;
+  --danger-soft: #F6DEDA;
+  --hatch: #C9D1D8;
+  --shadow: 0 10px 30px rgba(21, 32, 43, .12);
+  /* цвета линий метро — фирменные, одинаковые в обеих темах */
+  --l1: #D6083B; --l2: #0078C9; --l3: #009A49; --l4: #EA7125; --l5: #702785; --lx: #8A949D;
+  --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --f-body: "Onest", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E161E; --surface: #15202B; --ink: #E5EAEE; --muted: #93A2AF; --line: #263542;
+    --ochre: #E6AA3A; --ochre-soft: #3A2D12; --on-ochre: #1D1608;
+    --neva: #74A7CA; --neva-soft: #1B2F40; --ok: #5DBE85; --ok-soft: #173326; --danger: #E57468; --danger-soft: #3B1E1B;
+    --hatch: #2A3947; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E161E; --surface: #15202B; --ink: #E5EAEE; --muted: #93A2AF; --line: #263542;
+  --ochre: #E6AA3A; --ochre-soft: #3A2D12; --on-ochre: #1D1608;
+  --neva: #74A7CA; --neva-soft: #1B2F40; --ok: #5DBE85; --ok-soft: #173326; --danger: #E57468; --danger-soft: #3B1E1B;
+  --hatch: #2A3947; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--f-body); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+a { color: var(--neva); }
+:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; }
+@media (min-width: 720px) { .wrap { padding-inline: 28px; } }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.ribbon { background: repeating-linear-gradient(-45deg, var(--ochre) 0 14px, var(--ochre-soft) 14px 28px); color: var(--on-ochre); }
+.ribbon .wrap { padding-block: 6px; }
+.ribbon p { margin: 0; display: inline-block; background: var(--ochre); padding: 2px 10px; border-radius: 3px; font-size: 13px; font-weight: 600; }
+
+.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 14px; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-right: auto; min-width: 0; }
+.logo { font: 700 22px/1 var(--f-display); letter-spacing: .02em; display: flex; align-items: center; gap: 6px; }
+.logo i { width: 11px; height: 11px; border-radius: 50%; background: var(--ochre); display: inline-block; }
+.brand small { color: var(--muted); font-size: 13px; }
+.mode { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.mode button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.mode button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.mode .lock { font-family: var(--f-mono); font-size: 11px; opacity: .8; }
+.me { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px 4px 4px; }
+.ava { width: 30px; height: 30px; border-radius: 50%; background: var(--neva); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: 0 0 auto; }
+.me span { font-size: 13px; line-height: 1.2; text-align: left; }
+.me span em { display: block; font-style: normal; color: var(--muted); font-size: 12px; }
+
+.tabs { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabs .wrap::-webkit-scrollbar { display: none; }
+.tab { border: 0; background: none; padding: 12px 12px 11px; font-weight: 600; color: var(--muted); white-space: nowrap; border-bottom: 3px solid transparent; display: inline-flex; gap: 8px; align-items: center; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ochre); }
+.badge { background: var(--danger); color: #fff; font: 600 11px/1 var(--f-mono); padding: 3px 6px; border-radius: 999px; }
+
+main .wrap { padding-block: 24px 48px; }
+.view { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+.view-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px; }
+.view-head h1 { font: 700 clamp(22px, 3.4vw, 32px)/1.15 var(--f-display); letter-spacing: -.01em; }
+.view-head p { margin: 6px 0 0; color: var(--muted); max-width: 66ch; }
+.eyebrow { font: 600 11px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--neva); margin-bottom: 8px; display: block; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 9px 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform .12s ease, background .12s ease; text-decoration: none; color: var(--ink); }
+.btn:hover { background: var(--paper); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--ochre); border-color: var(--ochre); color: var(--on-ochre); }
+.btn.primary:hover { filter: brightness(1.05); background: var(--ochre); }
+.btn.primary:disabled { opacity: .45; filter: none; }
+.btn.dark { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.btn.danger { color: var(--danger); }
+.btn.sm { padding: 6px 11px; font-size: 13px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.stat { padding: 14px 16px; border-left: 1px solid var(--line); }
+.stat:first-child { border-left: 0; }
+.stat b { display: block; font: 600 22px/1.2 var(--f-mono); font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+@media (max-width: 720px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-left: 0; }
+  .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+
+.dots { display: inline-flex; gap: 3px; flex: 0 0 auto; }
+.ld { width: 12px; height: 12px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 2px var(--surface); }
+.ld.icon { border-radius: 3px; background: var(--ochre); }
+
+.work { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 920px) { .work { grid-template-columns: minmax(0, 1fr); } }
+.spots { position: sticky; top: 60px; max-height: calc(100vh - 80px); display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+@media (max-width: 920px) { .spots { position: static; max-height: none; } .spot-items { max-height: 320px; } }
+.spots-tools { padding: 12px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
+.linefilter { display: flex; flex-wrap: wrap; gap: 6px; }
+.lf { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 9px 3px 6px; font-size: 12px; font-weight: 600; display: inline-flex; gap: 5px; align-items: center; }
+.lf[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.spot-items { overflow-y: auto; }
+.si { width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.si:hover { background: var(--paper); }
+.si[aria-current="true"] { background: var(--ochre-soft); }
+.si b { font-weight: 600; display: block; line-height: 1.25; }
+.si small { color: var(--muted); font-size: 12px; }
+.si .cnt { font: 600 12px var(--f-mono); color: var(--muted); }
+.si.closed b { text-decoration: line-through; color: var(--muted); }
+
+.spot { display: grid; gap: 16px; min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.spot-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: start; }
+.spot-head h2 { font: 700 clamp(20px, 3vw, 28px)/1.15 var(--f-display); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spot-head h2 .ld { width: 16px; height: 16px; }
+.spot-head p { margin: 6px 0 0; color: var(--muted); font-size: 13.5px; }
+.spot-head .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.status { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 12px 14px; border-radius: 10px; font-size: 14px; }
+.status b.i { font: 700 16px/1.2 var(--f-display); }
+.status.risk { background: var(--ochre-soft); }
+.status.risk b.i { color: var(--ochre); }
+.status.closed { background: var(--danger-soft); }
+.status.closed b.i { color: var(--danger); }
+.status p { margin: 0; }
+
+.days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.day { flex: 0 0 auto; min-width: 70px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 10px; text-align: left; }
+.day small { display: block; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; }
+.day b { font: 600 18px/1.2 var(--f-mono); }
+.day em { font-style: normal; display: block; font: 11px var(--f-mono); color: var(--muted); }
+.day[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.day[aria-pressed="true"] small, .day[aria-pressed="true"] em { color: inherit; opacity: .75; }
+
+.tl-box { padding: 14px 14px 10px; }
+.tl-scroll { overflow-x: auto; }
+.tl { min-width: 680px; display: grid; gap: 8px; }
+.tl-row { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; align-items: center; }
+.tl-label b { display: block; font-size: 14px; }
+.tl-label small { color: var(--muted); font-size: 11.5px; line-height: 1.2; display: block; }
+.track { position: relative; height: 56px; background: var(--paper); border-radius: 8px; overflow: hidden; }
+.hours { position: relative; height: 16px; }
+.hours span { position: absolute; transform: translateX(-50%); font: 11px var(--f-mono); color: var(--muted); }
+.grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+.past-shade { position: absolute; top: 0; bottom: 0; left: 0; background: repeating-linear-gradient(-45deg, transparent 0 6px, color-mix(in srgb, var(--muted) 14%, transparent) 6px 7px); }
+.now-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ok); z-index: 3; }
+.seg { position: absolute; top: 5px; bottom: 5px; border-radius: 6px; padding: 4px 7px; font-size: 12px; line-height: 1.25; overflow: hidden; text-align: left; border: 1px solid transparent; z-index: 2; min-width: 0; }
+.seg b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+.seg span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--f-mono); font-size: 11px; opacity: .85; }
+.seg.busy { background: var(--neva-soft); border-color: color-mix(in srgb, var(--neva) 40%, transparent); }
+.seg.busy:hover { border-color: var(--neva); }
+.seg.mine { background: var(--ochre); color: var(--on-ochre); }
+.seg.live { box-shadow: inset 0 0 0 2px var(--ok); }
+.seg.free { border: 1.5px dashed color-mix(in srgb, var(--muted) 45%, transparent); background: transparent; color: var(--muted); display: grid; place-items: center; font-weight: 600; z-index: 1; }
+.seg.free:hover { border-color: var(--ochre); background: var(--ochre-soft); color: var(--ink); }
+.seg.block { background: repeating-linear-gradient(-45deg, var(--hatch) 0 6px, transparent 6px 12px); color: var(--ink); border-color: var(--hatch); cursor: help; }
+.seg.soft { background: transparent; border: 1.5px dashed var(--ochre); top: auto; bottom: 3px; height: 8px; padding: 0; z-index: 4; cursor: help; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 12.5px; align-items: center; padding-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.sw.free { border: 1.5px dashed var(--muted); }
+.sw.busy { background: var(--neva-soft); border: 1px solid var(--neva); }
+.sw.mine { background: var(--ochre); }
+.sw.block { background: repeating-linear-gradient(-45deg, var(--hatch) 0 3px, transparent 3px 6px); border: 1px solid var(--hatch); }
+.sw.soft { border: 1.5px dashed var(--ochre); height: 6px; }
+.sw.now { width: 3px; background: var(--ok); }
+
+.quick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 12px; align-items: center; }
+.quick label { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+.quick label b { color: var(--ink); }
+.quick input { font-family: var(--f-mono); }
+.quick .msg { grid-column: 1 / -1; font-size: 13px; }
+.quick .msg.bad { color: var(--danger); }
+
+.blist { overflow: hidden; }
+.bl { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); align-items: center; }
+.bl:last-child { border-bottom: 0; }
+.bl .t { font: 600 13px var(--f-mono); font-variant-numeric: tabular-nums; }
+.bl .who b { font-weight: 600; }
+.bl .who small { color: var(--muted); font-size: 12.5px; display: block; }
+.bl.mine { background: color-mix(in srgb, var(--ochre-soft) 55%, transparent); }
+.bl.past { opacity: .5; }
+.tag { font: 600 10.5px/1 var(--f-mono); padding: 3px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: .05em; background: var(--paper); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.live { color: var(--ok); border-color: transparent; background: var(--ok-soft); }
+.bl .acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: end; align-items: center; }
+@media (max-width: 560px) { .bl { grid-template-columns: minmax(0, 1fr) auto; } .bl .t { grid-column: 1 / -1; } }
+.empty { padding: 18px; text-align: center; color: var(--muted); font-size: 14px; }
+
+.sub { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 760px) { .sub { grid-template-columns: minmax(0, 1fr); } }
+.card { padding: 16px; display: grid; gap: 10px; align-content: start; }
+.card h3 { font: 700 14px/1.3 var(--f-display); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.card h3 small { font: 400 12px var(--f-body); color: var(--muted); }
+.rules { margin: 0; padding-left: 20px; display: grid; gap: 7px; font-size: 14px; }
+.rules li::marker { font-family: var(--f-mono); color: var(--muted); }
+.rules .auto { font: 600 10px/1 var(--f-mono); color: var(--ok); background: var(--ok-soft); padding: 2px 5px; border-radius: 3px; margin-left: 4px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.places { display: grid; gap: 6px; }
+.place { font-size: 13.5px; padding: 8px 10px; background: var(--paper); border-radius: 8px; }
+.place b { font-weight: 600; }
+.chat { display: grid; gap: 10px; max-height: 280px; overflow-y: auto; }
+.msg-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; font-size: 13.5px; }
+.msg-row .ava { width: 28px; height: 28px; font-size: 11px; }
+.msg-row b { font-weight: 600; }
+.msg-row time { color: var(--muted); font: 11px var(--f-mono); margin-left: 6px; }
+.msg-row p { margin: 1px 0 0; }
+.chat-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.poll { display: grid; gap: 6px; }
+.opt { position: relative; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 13.5px; overflow: hidden; display: flex; justify-content: space-between; gap: 10px; }
+.opt i { position: absolute; inset: 0 auto 0 0; background: var(--neva-soft); z-index: 0; }
+.opt span, .opt em { position: relative; z-index: 1; }
+.opt em { font: 600 12px var(--f-mono); font-style: normal; color: var(--muted); }
+.opt.voted { border-color: var(--neva); }
+.poll small { color: var(--muted); font-size: 12px; }
+
+.compare { overflow: hidden; }
+.compare h2 { font: 700 18px/1.3 var(--f-display); padding: 16px 16px 4px; }
+.compare > p { margin: 0; padding: 0 16px 12px; color: var(--muted); font-size: 14px; }
+.cmp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--line); }
+.cmp div { padding: 11px 16px; font-size: 14px; }
+.cmp div:first-child { color: var(--muted); border-right: 1px solid var(--line); }
+.cmp div:first-child::before { content: "ВК: "; font: 600 11px var(--f-mono); color: var(--muted); }
+.cmp div:last-child::before { content: "Сайт: "; font: 600 11px var(--f-mono); color: var(--ok); }
+@media (max-width: 600px) { .cmp { grid-template-columns: minmax(0, 1fr); } .cmp div:first-child { border-right: 0; padding-bottom: 2px; } }
+
+.feedback { padding: 18px; display: grid; gap: 12px; }
+.feedback h2 { font: 700 18px/1.3 var(--f-display); }
+.feedback p { margin: 0; color: var(--muted); font-size: 14px; }
+.feedback textarea { width: 100%; min-height: 80px; resize: vertical; }
+.feedback .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+@media (max-width: 520px) { .feedback .row { grid-template-columns: minmax(0, 1fr); } }
+
+.two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.list { display: grid; gap: 10px; }
+.booking { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 14px; padding: 14px; align-items: center; }
+.when { text-align: center; border-right: 1px solid var(--line); padding-right: 12px; }
+.when small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.when b { font: 600 26px/1 var(--f-mono); display: block; margin: 2px 0; }
+.when span { font: 12px var(--f-mono); color: var(--muted); }
+.booking h3 { font-size: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.booking p { margin: 2px 0 8px; color: var(--muted); font-size: 13.5px; }
+.booking .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.side h2 { font: 700 15px/1.3 var(--f-display); margin-bottom: 10px; }
+.side .panel { padding: 16px; }
+.side ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13.5px; display: grid; gap: 6px; }
+.past-list div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.past-list div:last-child { border-bottom: 0; }
+.past-list span { color: var(--muted); font-family: var(--f-mono); font-size: 12px; white-space: nowrap; }
+
+.notes { display: grid; overflow: hidden; }
+.note { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); align-items: start; }
+.note:last-child { border-bottom: 0; }
+.note .mark { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; }
+.note.unread .mark { background: var(--ochre); }
+.note.unread { background: color-mix(in srgb, var(--ochre-soft) 45%, transparent); }
+.note .kind { font: 600 10.5px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--neva); }
+.note .kind.alert { color: var(--danger); }
+.note h3 { font-size: 14.5px; margin: 4px 0 2px; font-weight: 600; }
+.note p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.note .acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.note time { font: 12px var(--f-mono); color: var(--muted); white-space: nowrap; }
+.switches { display: grid; gap: 4px; }
+.switch { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--line); }
+.switch:last-child { border-bottom: 0; }
+.switch input { appearance: none; width: 38px; height: 22px; border-radius: 999px; background: var(--line); position: relative; flex: 0 0 auto; cursor: pointer; transition: background .15s; margin: 0; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); transition: transform .15s; }
+.switch input:checked { background: var(--ok); }
+.switch input:checked::after { transform: translateX(16px); }
+.switch small { display: block; color: var(--muted); font-size: 12px; }
+.side h3 { font-size: 12px; font-family: var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; }
+
+.disclaimer { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 16px 18px; background: var(--danger-soft); border-radius: 12px; }
+.disclaimer b.ico { font: 700 20px/1 var(--f-display); color: var(--danger); }
+.disclaimer p { margin: 0; font-size: 14px; }
+.legal-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.legal-sec { display: grid; gap: 14px; }
+.legal-sec > h2 { font: 700 20px/1.25 var(--f-display); }
+.legal-sec > p.lead { margin: -6px 0 0; color: var(--muted); max-width: 70ch; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table.risk { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+.risk th, .risk td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.risk thead th { font: 600 11px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.risk tr:last-child td { border-bottom: 0; }
+.risk td:first-child { font-family: var(--f-mono); font-size: 12.5px; white-space: nowrap; color: var(--neva); font-weight: 600; }
+.risk .fine { font-weight: 600; }
+.risk .tip { color: var(--muted); }
+.lvl { display: inline-block; font: 600 10.5px/1 var(--f-mono); padding: 4px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: .06em; }
+.lvl.lo { background: var(--ok-soft); color: var(--ok); }
+.lvl.mid { background: var(--ochre-soft); color: color-mix(in srgb, var(--ochre) 70%, var(--ink)); }
+.lvl.hi { background: var(--danger-soft); color: var(--danger); }
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.steps li { counter-increment: s; padding: 16px; }
+.steps li::before { content: counter(s); font: 700 13px/1 var(--f-mono); width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--surface); display: grid; place-items: center; margin-bottom: 10px; }
+.steps h3 { font-size: 15px; margin-bottom: 4px; }
+.steps p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.tips { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.tipcard { padding: 16px; display: grid; gap: 6px; align-content: start; }
+.tipcard .eff { font: 600 11px/1 var(--f-mono); color: var(--ok); text-transform: uppercase; letter-spacing: .08em; }
+.tipcard h3 { font-size: 15px; }
+.tipcard p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.official { padding: 18px; display: grid; gap: 10px; }
+.official p { margin: 0; font-size: 14px; max-width: 75ch; }
+.official .muted { color: var(--muted); }
+details.faq { border-bottom: 1px solid var(--line); }
+details.faq:last-child { border-bottom: 0; }
+details.faq summary { cursor: pointer; padding: 14px 16px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+details.faq summary::-webkit-details-marker { display: none; }
+details.faq summary::after { content: "+"; font-family: var(--f-mono); color: var(--muted); }
+details.faq[open] summary::after { content: "−"; }
+details.faq p { margin: 0; padding: 0 16px 16px; color: var(--muted); font-size: 14px; max-width: 75ch; }
+.ask { padding: 18px; display: grid; gap: 12px; }
+.ask textarea { width: 100%; min-height: 90px; resize: vertical; }
+
+.field { display: grid; gap: 5px; min-width: 0; }
+.field label, .field .lbl { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+input[type="text"], input[type="search"], select, textarea { border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 9px 11px; width: 100%; min-width: 0; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.fields .full { grid-column: 1 / -1; }
+@media (max-width: 520px) { .fields { grid-template-columns: minmax(0, 1fr); } }
+.seg-ctl { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
+.seg-ctl label { padding: 8px 12px; font-size: 13px; cursor: pointer; font-weight: 500; }
+.seg-ctl input { position: absolute; opacity: 0; pointer-events: none; }
+.seg-ctl label:has(input:checked) { background: var(--ink); color: var(--surface); }
+.seg-ctl label:has(input:focus-visible) { outline: 2px solid var(--ochre); outline-offset: -2px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13.5px; }
+.checks { list-style: none; margin: 0; padding: 10px 12px; display: grid; gap: 5px; background: var(--paper); border-radius: 8px; font-size: 13.5px; }
+.checks li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; }
+.checks li::before { font: 700 13px var(--f-mono); }
+.checks li.ok::before { content: "✓"; color: var(--ok); }
+.checks li.bad { color: var(--danger); }
+.checks li.bad::before { content: "✕"; }
+.checks li.warn::before { content: "!"; color: var(--ochre); }
+
+dialog { border: 0; border-radius: 14px; padding: 0; width: min(560px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+dialog::backdrop { background: rgba(10, 16, 22, .5); }
+.dlg { padding: 20px; display: grid; gap: 16px; }
+.dlg header { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.dlg header h2 { font: 700 18px/1.25 var(--f-display); }
+.dlg header p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+.x { border: 0; background: var(--paper); width: 32px; height: 32px; border-radius: 50%; font-size: 18px; line-height: 1; flex: 0 0 auto; }
+.dlg footer { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 14px; font-size: 14px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.reasons { display: grid; gap: 6px; }
+.reasons label { display: flex; gap: 10px; align-items: center; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; cursor: pointer; }
+.reasons label:has(input:checked) { border-color: var(--ink); background: var(--paper); }
+
+.listener-hero { padding: 22px; background: var(--ink); color: var(--surface); border-radius: 14px; display: grid; gap: 8px; }
+.listener-hero h1 { font: 700 clamp(22px, 4vw, 34px)/1.15 var(--f-display); }
+.listener-hero p { margin: 0; opacity: .8; max-width: 60ch; }
+.gigs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.gig { padding: 16px; display: grid; gap: 6px; }
+.gig .t { font: 600 13px var(--f-mono); color: var(--neva); }
+.gig .t.live { color: var(--ok); }
+.gig h3 { font-size: 17px; }
+.gig p { margin: 0; color: var(--muted); font-size: 13.5px; display: flex; gap: 6px; align-items: center; }
+
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: var(--ink); color: var(--surface); padding: 11px 16px; border-radius: 10px; font-size: 14px; max-width: calc(100vw - 32px); box-shadow: var(--shadow); transition: opacity .2s, transform .2s; z-index: 100; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+footer.site { border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="ribbon"><div class="wrap"><p>Концепт сайта, версия 2: данные выдуманы, кнопки работают понарошку, после перезагрузки всё сбросится</p></div></div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">PITER<i></i>MUSIC</div>
+      <small>запись на точки и юрпомощь для уличных музыкантов Петербурга</small>
+    </div>
+    <div class="mode" role="group" aria-label="Режим">
+      <button type="button" data-mode="musician" aria-pressed="true">Музыкантам <span class="lock">закрыто</span></button>
+      <button type="button" data-mode="listener" aria-pressed="false">Слушателям <span class="lock">скоро</span></button>
+    </div>
+    <button class="me" type="button" data-stub="Профиль: жанр, состав, ссылки, история выступлений и рейтинг надёжности">
+      <span class="ava">СГ</span><span>Саша Громов<em>гитара, вокал</em></span>
+    </button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Разделы">
+  <div class="wrap" role="tablist">
+    <button class="tab" role="tab" data-tab="spots" aria-selected="true">Точки и запись</button>
+    <button class="tab" role="tab" data-tab="mine" aria-selected="false">Мои записи</button>
+    <button class="tab" role="tab" data-tab="notify" aria-selected="false">Уведомления <span class="badge" id="badge">0</span></button>
+    <button class="tab" role="tab" data-tab="legal" aria-selected="false">Юрпомощь</button>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+
+    <!-- ТОЧКИ И ЗАПИСЬ -->
+    <section class="view" id="view-spots">
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Закрытый раздел · только для музыкантов сообщества</span>
+          <h1>Кто, где и когда играет</h1>
+          <p>Те же точки, что в обсуждениях сообщества, только вместо ленты комментариев — расписание. Сайт сам проверяет правила точки и пересечения броней. <a href="#compare">Чем это удобнее обсуждений ВК</a></p>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+
+      <div class="work">
+        <aside class="panel spots" aria-label="Точки">
+          <div class="spots-tools">
+            <input type="search" id="spotSearch" placeholder="Найти точку или станцию" aria-label="Найти точку">
+            <div class="linefilter" id="lineFilter"></div>
+          </div>
+          <div class="spot-items" id="spotItems"></div>
+        </aside>
+        <div class="spot" id="spot"></div>
+      </div>
+
+      <div class="panel compare" id="compare">
+        <h2>Чем это удобнее обсуждений ВК</h2>
+        <p>Всё, что сейчас держится на комментариях, закрепах и силах одного администратора, сайт делает сам.</p>
+        <div class="cmp"><div>Бронь — комментарий «10.10 17-20 метро», который легко не заметить среди 36 других</div><div>Бронь видна на шкале дня, сразу понятно, где есть окно</div></div>
+        <div class="cmp"><div>Отмена: дописать «ОТМЕНА», удалить комментарий, написать в чат точки</div><div>Одна кнопка. Время освобождается, очередь получает уведомление</div></div>
+        <div class="cmp"><div>Админ просит удалять устаревшие комментарии</div><div>Прошедшие записи сами уходят в архив</div></div>
+        <div class="cmp"><div>«У вас 11 сентября написано, исправьте, чтобы не путаться»</div><div>Дата выбирается из календаря, рядом показан день недели</div></div>
+        <div class="cmp"><div>Правила в закрепе, их не все читают: больше 4 часов, две брони в день, оркестр по понедельникам</div><div>Запись, которая нарушает правила, просто не сохранится, и сайт объяснит почему</div></div>
+        <div class="cmp"><div>Для каждой точки отдельная беседа, ссылка на неё спрятана в закрепе</div><div>Чат точки прямо на её странице, рядом с расписанием</div></div>
+        <div class="cmp"><div>«Если точка перестала работать, напишите админу»</div><div>Кнопка «Сообщить о проблеме»: всем, у кого там бронь, приходит уведомление</div></div>
+        <div class="cmp"><div>Админ один, времени мало, нужны помощники</div><div>У каждой точки свой смотритель, рутину делает сайт</div></div>
+      </div>
+
+      <form class="panel feedback" id="feedback">
+        <h2>Что думаете?</h2>
+        <p>Это концепт, и ваше мнение решает, каким будет сайт. Чего не хватает, что лишнее, стали бы вы так бронировать?</p>
+        <textarea id="fbText" aria-label="Ваш отзыв" placeholder="Например: удобно, но хочу бронировать прямо из ВК через бота"></textarea>
+        <div class="row">
+          <input type="text" id="fbWho" placeholder="Как вас зовут или ссылка на ВК — по желанию" aria-label="Контакт">
+          <button class="btn primary" type="submit">Отправить отзыв</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- МОИ ЗАПИСИ -->
+    <section class="view" id="view-mine" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Личный кабинет</span>
+          <h1>Мои записи</h1>
+          <p>Записи можно перенести или отменить в один клик. Все, кто стоит в очереди на это время, сразу получат уведомление.</p>
+        </div>
+      </div>
+      <div class="two">
+        <div class="list" id="myList"></div>
+        <aside class="side" style="display:grid; gap:14px">
+          <div class="panel">
+            <h2>Надёжность: 96%</h2>
+            <ul>
+              <li>23 выступления за сезон, 1 поздняя отмена</li>
+              <li>Рейтинг видят другие музыканты</li>
+              <li>Если отменяете позже, чем за 3 часа, или не приходите без отмены, рейтинг падает</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h2>Архив</h2>
+            <div class="past-list">
+              <div>Василеостровская · Метро<span>сб 3.10 · 18–22</span></div>
+              <div>Спас на Крови · Кассы<span>пт 2.10 · 20–23</span></div>
+              <div>Горьковская · У метро<span>вс 27.09 · 14–18</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- УВЕДОМЛЕНИЯ -->
+    <section class="view" id="view-notify" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Оповещения</span>
+          <h1>Уведомления</h1>
+          <p>Напоминания о бронях, освободившиеся окна, новые голосования и предупреждения по точкам. Можно получать их на сайте, в ВК или в Telegram.</p>
+        </div>
+        <button class="btn" type="button" id="readAll">Отметить все прочитанными</button>
+      </div>
+      <div class="two">
+        <div class="panel notes" id="notes"></div>
+        <aside class="side">
+          <div class="panel">
+            <h2>Куда присылать</h2>
+            <div class="switches">
+              <label class="switch">На сайте<input type="checkbox" id="n-site" checked></label>
+              <label class="switch"><span>ВКонтакте<small>сообщения от бота сообщества</small></span><input type="checkbox" id="n-vk" checked></label>
+              <label class="switch">Telegram<input type="checkbox" id="n-tg"></label>
+            </div>
+            <h3>О чём</h3>
+            <div class="switches">
+              <label class="switch">Напоминание за 2 часа до брони<input type="checkbox" id="n-rem" checked></label>
+              <label class="switch">Освободилось время, где я в очереди<input type="checkbox" id="n-free" checked></label>
+              <label class="switch">Новые голосования и правила на моих точках<input type="checkbox" id="n-chg" checked></label>
+              <label class="switch"><span>Предупреждения по точкам<small>закрытия, конфликты, проверки</small></span><input type="checkbox" id="n-alert" checked></label>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ЮРПОМОЩЬ -->
+    <section class="view" id="view-legal" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Юридическая помощь</span>
+          <h1>Что грозит и как защититься</h1>
+          <p>Простым языком: какие статьи применяют к уличным музыкантам, как вести себя при проверке и в конфликте, как законно снизить риски.</p>
+        </div>
+        <button class="btn dark" type="button" data-stub="SOS: сообщение в чат точки и дежурному юристу с вашим местом и временем брони">Нужна помощь сейчас</button>
+      </div>
+      <div class="disclaimer">
+        <b class="ico">!</b>
+        <p><b>Черновик для концепта.</b> Это справка, а не юридическая консультация. Статьи, суммы штрафов и местные правила Петербурга перед запуском должен проверить юрист: законы меняются. Где сумма не указана, её нужно уточнить.</p>
+      </div>
+      <div class="legal-nav">
+        <a class="btn sm" href="#risks">Что может грозить</a>
+        <a class="btn sm" href="#police">Если подошла полиция</a>
+        <a class="btn sm" href="#lower">Как снизить риски</a>
+        <a class="btn sm" href="#official">Официальное разрешение</a>
+        <a class="btn sm" href="#faq">Частые вопросы</a>
+        <a class="btn sm" href="#ask">Спросить юриста</a>
+      </div>
+
+      <div class="legal-sec" id="risks">
+        <h2>Что может грозить</h2>
+        <p class="lead">Чаще всего дело ограничивается устным предупреждением. Ниже статьи, которые встречаются на практике, от самой частой к самой редкой.</p>
+        <div class="table-scroll">
+          <table class="risk">
+            <thead><tr><th>Статья</th><th>За что</th><th>Санкция (ориентир)</th><th>Риск</th><th>Что важно знать</th></tr></thead>
+            <tbody>
+              <tr><td>Закон СПб № 273-70</td><td>Шум в ночное время, жалобы жителей на громкость</td><td class="fine">штраф, сумма уточняется</td><td><span class="lvl mid">средний</span></td><td class="tip">Главный местный риск. В сообществе принято правило «после 22:00 у жилых домов не играем». Ночные часы задаёт закон о тишине: проверьте действующую редакцию.</td></tr>
+              <tr><td>КоАП РФ 14.1 ч.1</td><td>Предпринимательство без регистрации, если доход регулярный</td><td class="fine">500–2 000 ₽</td><td><span class="lvl lo">низкий</span></td><td class="tip">Применяют редко. Самозанятость снимает вопрос почти полностью.</td></tr>
+              <tr><td>КоАП РФ 20.2</td><td>Участие в публичном мероприятии без уведомления</td><td class="fine">10 000–20 000 ₽ (ч. 5)</td><td><span class="lvl mid">средний</span></td><td class="tip">Музыкальное выступление не преследует целей публичного мероприятия по закону 54-ФЗ. Это главный аргумент, его стоит записать в объяснениях.</td></tr>
+              <tr><td>КоАП РФ 20.1 ч.1</td><td>Мелкое хулиганство</td><td class="fine">500–1 000 ₽ или арест до 15 суток</td><td><span class="lvl lo">низкий</span></td><td class="tip">Нужны нецензурная брань или приставание к гражданам. Сама музыка под эту статью не подпадает.</td></tr>
+              <tr><td>КоАП РФ 19.3 ч.1</td><td>Неповиновение законному требованию полиции</td><td class="fine">штраф, обязательные работы или арест</td><td><span class="lvl hi">высокий</span></td><td class="tip">Самая неприятная статья, и спор на месте почти всегда её провоцирует. Выполняйте требования и фиксируйте их, а не спорьте.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="legal-sec" id="police">
+        <h2>Если подошла полиция</h2>
+        <p class="lead">Порядок действий, который снижает шанс получить протокол и помогает его оспорить, если протокол всё же составят.</p>
+        <ol class="steps">
+          <li class="panel"><h3>Остановите музыку и спокойно поздоровайтесь</h3><p>Тон разговора решает больше, чем любая статья. Не спорьте на месте.</p></li>
+          <li class="panel"><h3>Попросите представиться</h3><p>По закону «О полиции» сотрудник называет должность, звание, фамилию и причину обращения.</p></li>
+          <li class="panel"><h3>Покажите паспорт</h3><p>Носите его с собой. Без документов могут доставить в отдел для установления личности.</p></li>
+          <li class="panel"><h3>Ведите видеозапись открыто</h3><p>Съёмка в общественном месте не запрещена. Предупредите, что снимаете, и не мешайте сотруднику работать.</p></li>
+          <li class="panel"><h3>Протокол: читайте и пишите «не согласен»</h3><p>Объясните своими словами, что это выступление, а не публичное мероприятие. Пустые графы зачеркните. Копию заберите.</p></li>
+          <li class="panel"><h3>Нажмите «Нужна помощь сейчас»</h3><p>Чат точки и дежурный юрист увидят, где вы. Потом поможем с возражением.</p></li>
+        </ol>
+      </div>
+
+      <div class="legal-sec" id="lower">
+        <h2>Как законно снизить риски</h2>
+        <p class="lead">Ничего не нужно обходить. Достаточно знать правила лучше, чем тот, кто к вам подошёл.</p>
+        <div class="tips">
+          <div class="panel tipcard"><span class="eff">снимает статью 14.1</span><h3>Оформите самозанятость</h3><p>Регистрация в приложении «Мой налог» занимает 10 минут. Налог 4% с переводов от физлиц. Донаты по QR-коду становятся законным доходом.</p></div>
+          <div class="panel tipcard"><span class="eff">сохраняет точки</span><h3>Громкость — общее дело</h3><p>Из-за громких колонок жители требуют полного запрета выступлений у метро. Одна слишком громкая колонка может закрыть точку для всех.</p></div>
+          <div class="panel tipcard"><span class="eff">меньше поводов</span><h3>Не перекрывайте проход</h3><p>Оставляйте свободными тротуар, выход из метро, входы в кафе и подъезды. Это частая формальная причина подойти.</p></div>
+          <div class="panel tipcard"><span class="eff">без конфликта с охраной</span><h3>Знайте границы территории</h3><p>Вестибюль метро, ТЦ и вокзалы — территории со своими правилами, там играть без разрешения нельзя.</p></div>
+          <div class="panel tipcard"><span class="eff">аргумент в протоколе</span><h3>Донаты — добровольные</h3><p>Не называйте цену и не продавайте диски без чека. Кейс для пожертвований означает подарок, а не торговлю.</p></div>
+          <div class="panel tipcard"><span class="eff">доказательства</span><h3>Бронируйте на сайте</h3><p>История броней показывает, что вы выступаете регулярно, соблюдаете очередь и правила точки.</p></div>
+        </div>
+      </div>
+
+      <div class="legal-sec" id="official">
+        <h2>Официальное разрешение</h2>
+        <div class="panel official">
+          <p>У Комитета по культуре есть раздел «Уличные выступления» на сайте <a href="https://spbcult.ru" target="_blank" rel="noopener">spbcult.ru</a>. Там согласуют место и время официально.</p>
+          <p class="muted">В сообществе многие от этого отказались: места неудобные, запись непрозрачная. Перед запуском юрист разберёт, что даёт официальное согласование, где оно обязательно и как совмещать его с бронью на сайте. Если у точки есть официальный статус, на её странице появится отметка.</p>
+        </div>
+      </div>
+
+      <div class="legal-sec" id="faq">
+        <h2>Частые вопросы</h2>
+        <div class="panel">
+          <details class="faq"><summary>Прохожие говорят, что «составят протокол» и вызовут полицию</summary><p>Протокол об административном правонарушении составляет только уполномоченное должностное лицо, а не прохожий или жилец. Вызвать полицию может любой. Спокойно уменьшите громкость, не вступайте в спор и, если приедет наряд, действуйте по шагам выше.</p></details>
+          <details class="faq"><summary>На моей брони играет другой человек без записи и ведёт себя агрессивно</summary><p>Не вступайте в конфликт и не трогайте чужую технику. Нажмите «Сообщить о проблеме» на странице точки: смотритель и музыканты точки увидят это сразу. При угрозах здоровью звоните 112. Бронь на сайте не даёт права выгонять человека силой, она нужна для договорённостей внутри сообщества.</p></details>
+          <details class="faq"><summary>Нужно ли разрешение, чтобы играть на улице?</summary><p>Федеральный закон отдельного разрешения для сольного выступления в общем случае не требует. Ограничения дают закон о тишине, правила благоустройства, тип территории и городские правила. Как устроено в Петербурге сейчас, юрист распишет перед запуском.</p></details>
+          <details class="faq"><summary>Могут ли забрать инструмент или колонку?</summary><p>Изъятие возможно только в рамках дела об административном правонарушении, с протоколом, понятыми или видеозаписью. Попросите опись вещей и копию протокола.</p></details>
+          <details class="faq"><summary>Можно ли снимать полицейских на телефон?</summary><p>Да, открытая съёмка в общественном месте не запрещена. Не мешайте сотрудникам и не подносите телефон к лицу вплотную.</p></details>
+          <details class="faq"><summary>Что делать, если уже выписали штраф?</summary><p>Постановление можно обжаловать в течение 10 суток. Загрузите фото протокола в раздел «Спросить юриста», и мы поможем составить жалобу.</p></details>
+        </div>
+      </div>
+
+      <div class="legal-sec" id="ask">
+        <h2>Спросить юриста</h2>
+        <form class="panel ask" id="askForm">
+          <div class="field"><label for="askText">Опишите ситуацию</label><textarea id="askText" placeholder="Например: у касс Спаса на Крови двое сказали, что составят протокол и вызовут полицию. Что они могут?"></textarea></div>
+          <label class="check"><input type="checkbox" id="askAnon" checked> Задать анонимно: ответ увидят другие музыканты, без моего имени</label>
+          <div><button class="btn primary" type="submit">Отправить вопрос</button></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- СЛУШАТЕЛЯМ -->
+    <section class="view" id="view-listener" hidden>
+      <div class="listener-hero">
+        <span class="eyebrow" style="color:var(--ochre)">Превью открытой части · появится позже</span>
+        <h1>Сегодня на улицах играют</h1>
+        <p>Слушатели видят только афишу: кто, у какого метро и во сколько. Афиша собирается сама из броней музыкантов.</p>
+      </div>
+      <div class="gigs" id="gigs"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Piter Music · концепт v2 · октябрь 2026</span>
+    <span>Вход — по приглашению из сообщества «Уличные выступления СПб»</span>
+  </div>
+</footer>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  const track = window.track || function () {};
+
+  // ===== время и даты (демо: «сейчас» = вт 6 октября 2026, 16:05) =====
+  const NOW_H = 16 + 5 / 60;
+  const NOW_LABEL = "вт 6 октября, 16:05";
+  const BASE = new Date(2026, 9, 6);
+  const WD = ["вс","пн","вт","ср","чт","пт","сб"];
+  const T0 = 12, T1 = 25; // шкала дня: 12:00 → 01:00
+  const dayDate = d => new Date(BASE.getTime() + d * 864e5);
+  const wd = d => dayDate(d).getDay();
+  const dShort = d => WD[wd(d)] + " " + dayDate(d).getDate() + ".10";
+  const dLong = d => (d === 0 ? "сегодня, " : d === 1 ? "завтра, " : "") + WD[wd(d)] + " " + dayDate(d).getDate() + " октября";
+  const fmt = h => String(Math.floor(h) % 24).padStart(2, "0") + ":" + (h % 1 ? "30" : "00");
+  const range = (s, e) => fmt(s) + "–" + fmt(e);
+
+  // ===== линии метро =====
+  const LINES = {
+    1: { c: "var(--l1)", n: "Кировско-Выборгская" }, 2: { c: "var(--l2)", n: "Московско-Петроградская" },
+    3: { c: "var(--l3)", n: "Невско-Василеостровская" }, 4: { c: "var(--l4)", n: "Правобережная" },
+    5: { c: "var(--l5)", n: "Фрунзенско-Приморская" }, x: { c: "var(--lx)", n: "Без метро" },
+  };
+  const dotsHtml = s => `<span class="dots">${s.icon ? '<i class="ld icon" title="Достопримечательность"></i>' : s.lines.map(l => `<i class="ld" style="background:${LINES[l].c}" title="${LINES[l].n}"></i>`).join("")}</span>`;
+
+  // ===== точки (как темы в обсуждениях сообщества) =====
+  const DEF_RULES = ["Не больше 4 часов в день на одного музыканта.", "Одна бронь в день на этой точке.", "После 22:00 играем только там, где рядом нет жилых домов.", "Об отмене сообщайте заранее — через кнопку «Отменить»."];
+  const basic = (id, name, lines, extra) => Object.assign({ id, name, lines, places: [{ id: "metro", name: "У метро", note: "у выхода, не перекрывая проход" }], rules: DEF_RULES, auto: [0, 1, 2], maxH: 4, endBy: 22, blocks: [], keeper: null, chat: [], poll: null, pop: .45 }, extra || {});
+  const SPOTS = [
+    basic("vaska", "Василеостровская", [3], {
+      pop: .8, keeper: "Марина В.",
+      places: [
+        { id: "metro", name: "Метро", note: "бронируется без уточнения места: достаточно даты и времени" },
+        { id: "pushka", name: "Пушка", note: "сильный ветер, звук сдувает; колонку не направлять вдоль 7-й линии в сторону Невы" },
+      ],
+      rules: [
+        "Выступайте не более 4 часов в день (исключение: если нет очереди).",
+        "Вечером бронь возможна либо до 20:00, либо до 22:00.",
+        "Бронь на две даты или два времени в один день недопустима.",
+        "На точке два места: «Метро» и «Пушка».",
+        "Снизьте громкость: у метро за спиной жилой дом, через дорогу физмат-лицей.",
+        "По понедельникам с 16:00 до 19:00 точку занимает духовой оркестр.",
+        "Заранее сообщайте об отмене.",
+      ],
+      auto: [0, 1, 2, 5, 6],
+      blocks: [{ wd: 1, s: 16, e: 19, hard: true, text: "Духовой оркестр" }],
+      status: { kind: "risk", text: "Жители жалуются на громкость и добиваются полного запрета выступлений у метро. Играйте тише: иначе точку можно потерять для всех." },
+      chat: [
+        ["Гоша Б.", "вчера 21:40", "На Пушке сегодня дико дует, кто с колонкой — ставьте её спиной к Неве."],
+        ["Нина З.", "сегодня 13:10", "У метро снова человек с колонкой без брони, на разговор не идёт. Не связывайтесь, отметила проблему на сайте."],
+        ["Марина В.", "сегодня 13:25", "Спасибо, видела. Кто в брони после 16 — играйте спокойно, если что, пишите сюда."],
+      ],
+      poll: { q: "Сократить время до 3 часов в день, чтобы вечером успевали двое?", opts: [["Да, а то совсем уже поиграть невозможно", 4], ["Да, но только на сезон (до конца августа)", 3], ["Нет, и так нормально, вполне можно найти окно", 5]] },
+    }),
+    basic("spas", "Спас на Крови", [], {
+      icon: true, pop: .85, keeper: "Лёва Т.", endBy: 25,
+      places: [
+        { id: "kassy", name: "Кассы", note: "два варианта расположения, см. схему; можно до 01:00" },
+        { id: "cafe", name: "Кафе", note: "негромко и строго до 22:00, звук не на жилые дома, иначе жители вызывают полицию", endBy: 22 },
+      ],
+      rules: [
+        "Два места для брони: «Кассы» и «Кафе».",
+        "«Кафе»: выступайте негромко, строго до 22:00, не направляйте звук на жилые дома.",
+        "По средам с 20:00 до 21:00 в соборе концерты. Если вы мешаете, сотрудники попросят прерваться: пожалуйста, отнеситесь с пониманием.",
+        "Не больше 4 часов в день на одного музыканта.",
+        "Ксилофоны и громкая перкуссия — только до 20:00.",
+      ],
+      auto: [1, 2, 3],
+      blocks: [{ wd: 3, s: 20, e: 21, hard: false, text: "Концерт в соборе — играть тихо или сделать паузу" }],
+      chat: [
+        ["Соня Л.", "вчера 22:05", "Кассы до 23 свободны были, никто не пришёл по брони 20–23 :("],
+        ["Лёва Т.", "вчера 22:30", "Поэтому и сделали отмену одной кнопкой и минус к рейтингу за неявку."],
+        ["Паша Е.", "сегодня 12:02", "К «Кафе» сегодня подходили двое, грозились протоколом. Ушли, когда я сделал тише."],
+      ],
+      poll: { q: "Ограничить выступление одного человека 3 часами?", opts: [["Да, а то совсем уже поиграть невозможно", 3], ["Да, но только на сезон (до конца августа)", 2], ["Нет, без проблем можно найти окно", 6]] },
+    }),
+    basic("gorkovskaya", "Горьковская", [2], { pop: .6, keeper: "Ден Ш." }),
+    basic("sadovaya", "Малая Садовая", ["x"], { pop: .7, places: [{ id: "street", name: "Улица", note: "пешеходная, рядом кафе и жилые дома" }] }),
+    basic("sennaya", "Сенная – Спасская", [2, 4], { pop: .6, places: [{ id: "square", name: "Площадь", note: "между выходами, не у торговых павильонов" }] }),
+    basic("vladimirskaya", "Владимирская", [1], { pop: .55 }),
+    basic("chernyshevskaya", "Чернышевская", [1], { pop: .4 }),
+    basic("narvskaya", "Нарвская", [1], { pop: .35 }),
+    basic("akademicheskaya", "Академическая", [1], { pop: .4 }),
+    basic("grazhdansky", "Гражданский проспект", [1], { pop: .3 }),
+    basic("primorskaya", "Приморская", [3], { pop: .4 }),
+    basic("lomonosovskaya", "Ломоносовская", [3], { pop: .3 }),
+    basic("pionerskaya", "Пионерская", [2], { pop: .4 }),
+    basic("prosvescheniya", "Просвещения", [2], { pop: .35 }),
+    basic("ozerki", "Озерки", [2], { pop: .3 }),
+    basic("zvezdnaya", "Звёздная", [2], { pop: .25 }),
+    basic("parkpobedy", "Парк Победы", [2], { pop: 0, status: { kind: "closed", text: "Закрыто на реконструкцию. Брони сняты, все, у кого они были, получили уведомление." } }),
+    basic("dybenko", "Улица Дыбенко", [4], { pop: .3 }),
+    basic("ladozhskaya", "Ладожская", [4], { pop: .35 }),
+    basic("staraya", "Старая Деревня", [5], { pop: .3 }),
+  ];
+  const spotById = id => SPOTS.find(s => s.id === id);
+  const placeOf = (s, pid) => s.places.find(p => p.id === pid);
+  const isClosed = s => !!(s.status && s.status.kind === "closed");
+
+  // ===== брони =====
+  const ME = { n: "Саша Громов", g: "гитара, вокал" };
+  const ARTISTS = [
+    ["Лёва Т.", "скрипка"], ["Вика М.", "вокал, укулеле"], ["Гоша Б.", "блюз, гитара"], ["Оля Д.", "арфа"], ["Рустам Х.", "хэндпан"],
+    ["Женя П.", "саксофон"], ["Нина З.", "вокал, лупер"], ["Костя Ю.", "рок-кавер"], ["Мила С.", "флейта"], ["Ден Ш.", "барабаны"],
+    ["Ярик О.", "аккордеон"], ["Соня Л.", "фолк"], ["Паша Е.", "гитара, вокал"], ["Лиза Н.", "виолончель"], ["Дуэт «Фонтанка»", "джаз"],
+    ["Бэнд «Разводной мост»", "рок"],
+  ];
+  let uid = 1;
+  const bookings = [];
+  const add = b => { b.id = uid++; bookings.push(b); return b; };
+  add({ spot: "vaska", place: "metro", d: 0, s: 18, e: 22, n: ME.n, g: ME.g, amp: false, mine: true });
+  add({ spot: "spas", place: "kassy", d: 2, s: 20, e: 23, n: ME.n, g: ME.g, amp: true, mine: true });
+
+  const overlaps = (a, b) => a.s < b.e && b.s < a.e;
+  const blocksFor = (spot, d) => spot.blocks.filter(b => b.wd === wd(d));
+  let seed = 11;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const TPL = {
+    def: [[12, 16], [13, 15], [14, 18], [16, 20], [17, 20], [18, 22], [20, 22], [15, 17.5]],
+    kassy: [[14, 18], [17, 20], [19, 22], [20, 23], [21, 24], [23, 25]],
+    cafe: [[12, 15], [15, 17], [17, 19], [19, 22]],
+  };
+  SPOTS.forEach(sp => {
+    if (isClosed(sp)) return;
+    sp.places.forEach(pl => {
+      for (let d = 0; d < 7; d++) {
+        const weekend = [5, 6, 0].includes(wd(d));
+        const tries = 2 + Math.round((sp.pop + (weekend ? .25 : 0)) * 4);
+        const tpl = TPL[pl.id] || TPL.def;
+        const used = new Set();
+        for (let i = 0; i < tries; i++) {
+          if (rnd() > sp.pop + (weekend ? .2 : 0)) continue;
+          const [s, e] = tpl[Math.floor(rnd() * tpl.length)];
+          const end = Math.min(e, pl.endBy || sp.endBy);
+          if (end - s < 1) continue;
+          const cand = { s, e: end };
+          if (bookings.some(b => b.spot === sp.id && b.place === pl.id && b.d === d && overlaps(b, cand))) continue;
+          if (blocksFor(sp, d).some(b => b.hard && overlaps(b, cand))) continue;
+          const a = ARTISTS[Math.floor(rnd() * ARTISTS.length)];
+          if (used.has(a[0])) continue;
+          used.add(a[0]);
+          add({ spot: sp.id, place: pl.id, d, s, e: end, n: a[0], g: a[1], amp: rnd() > .5 && pl.id !== "cafe" });
+        }
+      }
+    });
+  });
+  // окно, о котором уведомление: Спас, Кафе, завтра 19–22 свободно
+  for (let i = bookings.length - 1; i >= 0; i--) { const b = bookings[i]; if (b.spot === "spas" && b.place === "cafe" && b.d === 1 && overlaps(b, { s: 19, e: 22 })) bookings.splice(i, 1); }
+
+  const notes = [
+    { kind: "Напоминание", t: "15:58", unread: true, title: "Через 2 часа ваша бронь: Василеостровская, «Метро», 18:00–22:00", text: "Помните про громкость: за спиной жилой дом. Если не успеваете, отмените бронь, и очередь получит уведомление.", acts: [["Я приду", "confirm"], ["Отменить бронь", "cancelToday"]] },
+    { kind: "Освободилось", t: "14:20", unread: true, title: "Спас на Крови, «Кафе»: завтра, 19:00–22:00", text: "Бронь отменили. Вы первый в очереди: окно держится за вами 30 минут.", acts: [["Забронировать", "takeFree"]] },
+    { kind: "Голосование", t: "13:40", unread: true, title: "Василеостровская: сократить время до 3 часов в день?", text: "Проголосовали 12 человек. Решение примут, когда наберётся 20 голосов.", acts: [["Проголосовать", "openPoll"]] },
+    { kind: "Проблема на точке", alert: true, t: "13:12", unread: false, title: "Василеостровская: у метро играет человек без брони", text: "На разговор не идёт, ведёт себя агрессивно. Не вступайте в конфликт, пишите в чат точки. Смотритель в курсе." },
+    { kind: "Точка закрыта", alert: true, t: "вчера", unread: false, title: "Парк Победы закрыт на реконструкцию", text: "Все брони на точке сняты. Когда точку откроют, придёт уведомление." },
+  ];
+
+  // ===== helpers =====
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  let toastT;
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 3400); }
+  function addNote(n) { notes.unshift(Object.assign({ t: "сейчас", unread: true }, n)); renderNotes(); }
+  const isPast = b => b.d === 0 && b.e <= NOW_H;
+  const isLive = b => b.d === 0 && b.s <= NOW_H && NOW_H < b.e;
+
+  let curSpot = "vaska", curDay = 0, lineFilter = "all", query = "";
+
+  // ===== tabs & mode =====
+  const views = ["spots", "mine", "notify", "legal"];
+  function showTab(name, silent) {
+    if (!views.includes(name)) name = "spots";
+    document.querySelectorAll(".mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === "musician"));
+    document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+    views.forEach(v => $("#view-" + v).hidden = v !== name);
+    $("#view-listener").hidden = true;
+    if (!silent) track("tab_" + name);
+    try { localStorage.setItem("pm2-tab", name); } catch (e) {}
+  }
+  function showListener() {
+    document.querySelectorAll(".mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === "listener"));
+    views.forEach(v => $("#view-" + v).hidden = true);
+    document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", "false"));
+    $("#view-listener").hidden = false; renderGigs();
+    track("listener_mode");
+    toast("Так будет выглядеть открытая часть для слушателей");
+  }
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { showTab(b.dataset.tab); window.scrollTo({ top: 0 }); }));
+  document.querySelectorAll(".mode button").forEach(b => b.addEventListener("click", () => b.dataset.mode === "listener" ? showListener() : showTab("spots")));
+
+  // ===== stats =====
+  function renderStats() {
+    const today = bookings.filter(b => b.d === 0);
+    const live = today.filter(isLive).length;
+    const open = SPOTS.filter(s => !isClosed(s)).length;
+    let freeEve = 0;
+    SPOTS.forEach(s => { if (isClosed(s)) return; s.places.forEach(p => { if (!today.some(b => b.spot === s.id && b.place === p.id && overlaps(b, { s: 18, e: 22 }))) freeEve++; }); });
+    $("#stats").innerHTML = [[today.length, "броней сегодня по городу"], [live, "музыкантов играют прямо сейчас"], [freeEve, "мест со свободным вечером 18–22"], [open + " / " + SPOTS.length, "точек работают"]]
+      .map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+  }
+
+  // ===== spot list =====
+  function renderLineFilter() {
+    const items = ["all", "1", "2", "3", "4", "5"];
+    $("#lineFilter").innerHTML = items.map(k => `<button type="button" class="lf" data-line="${k}" aria-pressed="${lineFilter === k}" ${k !== "all" ? `title="Линия ${k}: ${LINES[k].n}"` : ""}>${k !== "all" ? `<i class="ld" style="background:${LINES[k].c};width:10px;height:10px;box-shadow:none"></i>Линия ${k}` : "Все линии"}</button>`).join("");
+    document.querySelectorAll(".lf").forEach(b => b.addEventListener("click", () => { lineFilter = b.dataset.line; track("line_filter", { line: lineFilter }); renderLineFilter(); renderSpotList(); }));
+  }
+  function renderSpotList() {
+    const q = query.trim().toLowerCase();
+    const list = SPOTS.filter(s => (lineFilter === "all" || s.lines.map(String).includes(lineFilter)) && (!q || s.name.toLowerCase().includes(q)));
+    $("#spotItems").innerHTML = list.length ? list.map(s => {
+      const n = bookings.filter(b => b.spot === s.id && b.d === curDay).length;
+      const closed = isClosed(s);
+      const sub = closed ? "закрыто на реконструкцию" : s.places.length > 1 ? s.places.map(p => p.name).join(" · ") : (s.status ? "жалобы жителей" : s.places[0].name.toLowerCase());
+      return `<button type="button" class="si ${closed ? "closed" : ""}" data-spot="${s.id}" aria-current="${s.id === curSpot}">
+        ${dotsHtml(s)}<span><b>${esc(s.name)}</b><small>${esc(sub)}</small></span><span class="cnt" title="броней на ${dShort(curDay)}">${closed ? "—" : n}</span></button>`;
+    }).join("") : `<div class="empty">Такой точки нет. Предложите её через «Сообщить о проблеме → Предложить новую точку».</div>`;
+    document.querySelectorAll(".si").forEach(b => b.addEventListener("click", () => {
+      curSpot = b.dataset.spot; track("spot_open", { spot: curSpot }); renderSpotList(); renderSpot();
+      if (window.matchMedia("(max-width: 920px)").matches) $("#spot").scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
+  }
+  let searchT;
+  $("#spotSearch").addEventListener("input", e => { query = e.target.value; renderSpotList(); clearTimeout(searchT); searchT = setTimeout(() => query && track("spot_search", { q: query }), 1200); });
+
+  // ===== spot detail =====
+  function freeGaps(spot, place, d) {
+    const busy = bookings.filter(b => b.spot === spot.id && b.place === place.id && b.d === d).map(b => [b.s, b.e]);
+    blocksFor(spot, d).filter(b => b.hard).forEach(b => busy.push([b.s, b.e]));
+    const lim = Math.min(place.endBy || spot.endBy, T1);
+    let from = d === 0 ? Math.max(T0, Math.ceil(NOW_H * 2) / 2) : T0;
+    busy.sort((a, b) => a[0] - b[0]);
+    const gaps = [];
+    for (const [s, e] of busy) { if (Math.min(s, lim) - from >= 1) gaps.push([from, Math.min(s, lim)]); from = Math.max(from, e); }
+    if (lim - from >= 1) gaps.push([from, lim]);
+    return gaps;
+  }
+  const pct = h => ((Math.min(Math.max(h, T0), T1) - T0) / (T1 - T0) * 100);
+
+  function renderSpot() {
+    const s = spotById(curSpot);
+    const closed = isClosed(s);
+    const dayCounts = Array.from({ length: 7 }, (_, d) => bookings.filter(b => b.spot === s.id && b.d === d).length);
+    const hours = []; for (let h = T0; h <= T1; h++) hours.push(h);
+
+    const timeline = s.places.map(p => {
+      const segs = bookings.filter(b => b.spot === s.id && b.place === p.id && b.d === curDay).sort((a, b) => a.s - b.s).map(b =>
+        `<button type="button" class="seg ${b.mine ? "mine" : "busy"} ${isLive(b) ? "live" : ""}" style="left:${pct(b.s)}%;width:${pct(b.e) - pct(b.s)}%" data-bid="${b.id}" title="${esc(b.n)} · ${range(b.s, b.e)}">
+          <b>${b.mine ? "Вы" : esc(b.n)}</b><span>${range(b.s, b.e)}</span></button>`).join("");
+      const blocks = blocksFor(s, curDay).map(b => b.hard
+        ? `<div class="seg block" style="left:${pct(b.s)}%;width:${pct(b.e) - pct(b.s)}%" title="${esc(b.text)}"><b>${esc(b.text)}</b><span>${range(b.s, b.e)}</span></div>`
+        : `<div class="seg soft" style="left:${pct(b.s)}%;width:${pct(b.e) - pct(b.s)}%" title="${esc(b.text)}"></div>`).join("");
+      const gaps = closed ? "" : freeGaps(s, p, curDay).map(([a, b]) =>
+        `<button type="button" class="seg free" style="left:${pct(a)}%;width:${pct(b) - pct(a)}%" data-gap="${p.id}|${a}|${b}" title="Свободно ${range(a, b)}">+ ${range(a, b)}</button>`).join("");
+      const end = Math.min(p.endBy || s.endBy, T1);
+      const after = end < T1 ? `<div class="seg block" style="left:${pct(end)}%;width:${100 - pct(end)}%;opacity:.6" title="После ${fmt(end)} здесь не играем"><span>после ${fmt(end)} — тишина</span></div>` : "";
+      const lines = hours.slice(1, -1).map(h => `<i class="grid-line" style="left:${pct(h)}%"></i>`).join("");
+      const past = curDay === 0 ? `<i class="past-shade" style="width:${pct(NOW_H)}%"></i><i class="now-line" style="left:${pct(NOW_H)}%"></i>` : "";
+      return `<div class="tl-row"><div class="tl-label"><b>${esc(p.name)}</b><small>до ${fmt(Math.min(p.endBy || s.endBy, T1))}</small></div>
+        <div class="track">${lines}${past}${after}${blocks}${gaps}${segs}</div></div>`;
+    }).join("");
+
+    const dayList = bookings.filter(b => b.spot === s.id && b.d === curDay).sort((a, b) => a.s - b.s || a.place.localeCompare(b.place));
+    const listHtml = dayList.length ? dayList.map(b => `<div class="bl ${b.mine ? "mine" : ""} ${isPast(b) ? "past" : ""}">
+        <span class="t">${range(b.s, b.e)}</span>
+        <span class="who"><b>${b.mine ? "Вы · " : ""}${esc(b.n)}</b><small>${esc(b.g)} · ${b.amp ? "с колонкой" : "акустика"}${s.places.length > 1 ? " · " + esc(placeOf(s, b.place).name) : ""}</small></span>
+        <span class="acts">${isLive(b) ? '<span class="tag live">играет</span>' : isPast(b) ? '<span class="tag">прошло</span>' : ""}
+          ${b.mine && !isPast(b) ? `<button class="btn sm" type="button" data-edit="${b.id}">Изменить</button><button class="btn sm danger" type="button" data-cancel="${b.id}">Отменить</button>`
+            : !isPast(b) && !b.mine ? `<button class="btn sm" type="button" data-queue="${b.id}">В очередь</button>` : ""}</span></div>`).join("")
+      : `<div class="empty">${closed ? "Точка закрыта, брони сняты." : "На этот день броней нет — всё свободно."}</div>`;
+
+    const pollHtml = s.poll ? (() => {
+      const total = s.poll.opts.reduce((a, o) => a + o[1], 0);
+      return `<div class="poll" id="poll">${s.poll.opts.map(([t, v], i) => `<button type="button" class="opt ${s.poll.voted === i ? "voted" : ""}" data-opt="${i}"><i style="width:${Math.round(v / total * 100)}%"></i><span>${esc(t)}</span><em>${v}</em></button>`).join("")}
+        <small>Проголосовали ${total} человек${s.poll.voted != null ? " · ваш голос учтён" : ""}</small></div>`;
+    })() : "";
+    const example = (() => {
+      // пример быстрой брони, который точно пройдёт проверку
+      for (let d = 1; d < 7; d++) for (const p of s.places) for (const [a, z] of [[18, 22], [16, 20], [20, 22], [14, 18], [12, 16]]) {
+        if (!validate({ spot: s.id, place: p.id, d, s: a, e: z, amp: false }, null).some(r => !r.ok))
+          return `${dayDate(d).getDate()}.10 ${a}-${z}${s.places.length > 1 ? " " + p.name.toLowerCase() : ""}`;
+      }
+      return "9.10 18-22";
+    })();
+
+    $("#spot").innerHTML = `
+      <div class="spot-head">
+        <div>
+          <h2>${dotsHtml(s)}${esc(s.name)}</h2>
+          <p>${s.keeper ? "Смотритель точки: " + esc(s.keeper) + " · " : ""}${s.places.length} ${s.places.length > 1 ? "места" : "место"} для брони · не больше ${s.maxH} ч в день</p>
+        </div>
+        <div class="acts">
+          <button class="btn sm" type="button" id="reportBtn">Сообщить о проблеме</button>
+          <button class="btn sm" type="button" id="favBtn">☆ Следить</button>
+          <button class="btn sm primary" type="button" id="bookBtn" ${closed ? "disabled" : ""}>+ Забронировать</button>
+        </div>
+      </div>
+      ${s.status ? `<div class="status ${s.status.kind}"><b class="i">!</b><p>${esc(s.status.text)}</p></div>` : ""}
+      <div class="days" role="group" aria-label="День">${dayCounts.map((n, d) => `<button class="day" type="button" data-day="${d}" aria-pressed="${d === curDay}"><small>${d === 0 ? "сегодня" : WD[wd(d)]}</small><b>${dayDate(d).getDate()}</b><em>${closed ? "—" : n + " брон."}</em></button>`).join("")}</div>
+      <div class="panel tl-box">
+        <div class="tl-scroll"><div class="tl">
+          <div class="tl-row"><span></span><div class="hours">${hours.map(h => `<span style="left:${pct(h)}%${h === T1 ? ";transform:translateX(-100%)" : h === T0 ? ";transform:none" : ""}">${fmt(h).slice(0, 2)}</span>`).join("")}</div></div>
+          ${timeline}
+        </div></div>
+        <div class="legend">
+          <span><i class="sw free"></i>свободно — нажмите, чтобы занять</span><span><i class="sw busy"></i>занято</span><span><i class="sw mine"></i>ваша бронь</span>
+          <span><i class="sw block"></i>нельзя</span><span><i class="sw soft"></i>можно, но тихо</span>${curDay === 0 ? `<span><i class="sw now"></i>сейчас, ${NOW_LABEL.split(", ")[1]}</span>` : ""}
+        </div>
+      </div>
+      ${closed ? "" : `<form class="panel quick" id="quick">
+        <label for="quickIn"><b>Быстрая бронь, как в ВК.</b> Напишите как привыкли, например <span class="mono">${example}</span></label>
+        <input type="text" id="quickIn" autocomplete="off" placeholder="${example}">
+        <button class="btn primary" type="submit">Проверить</button>
+        <div class="msg" id="quickMsg" hidden></div>
+      </form>`}
+      <div class="panel blist">${listHtml}</div>
+      <div class="sub">
+        <div class="panel card">
+          <h3>Правила точки <small>${s.keeper ? "пишет смотритель" : "общие правила сообщества"}</small></h3>
+          <ol class="rules">${s.rules.map((r, i) => `<li>${esc(r)}${s.auto.includes(i) ? '<span class="auto" title="Сайт проверяет это правило при бронировании">проверяет сайт</span>' : ""}</li>`).join("")}</ol>
+          <div class="places">${s.places.map(p => `<div class="place"><b>${esc(p.name)}</b> — ${esc(p.note)}</div>`).join("")}</div>
+        </div>
+        <div style="display:grid; gap:16px">
+          ${s.poll ? `<div class="panel card"><h3>Голосование</h3><p style="margin:0;font-weight:600;font-size:14px">${esc(s.poll.q)}</p>${pollHtml}</div>` : ""}
+          <div class="panel card">
+            <h3>Чат точки <small>вместо отдельной беседы</small></h3>
+            <div class="chat" id="chat">${s.chat.length ? s.chat.map(([n, t, m]) => `<div class="msg-row"><span class="ava">${esc(n.split(" ").map(x => x[0]).join("").slice(0, 2))}</span><div><b>${esc(n)}</b><time>${esc(t)}</time><p>${esc(m)}</p></div></div>`).join("") : '<div class="empty" style="padding:6px">Пока тихо. Здесь договариваются о переносах и предупреждают о проблемах.</div>'}</div>
+            <form class="chat-form" id="chatForm"><input type="text" id="chatIn" placeholder="Написать музыкантам точки" aria-label="Сообщение"><button class="btn sm" type="submit">Отправить</button></form>
+          </div>
+        </div>
+      </div>`;
+
+    document.querySelectorAll("#spot .day").forEach(b => b.addEventListener("click", () => { curDay = +b.dataset.day; track("day_select", { day: curDay }); renderSpot(); renderSpotList(); }));
+    document.querySelectorAll("#spot [data-bid]").forEach(b => b.addEventListener("click", () => {
+      const bk = bookings.find(x => x.id === +b.dataset.bid); if (!bk) return;
+      bk.mine ? openBooking({ edit: bk }, "timeline_mine") : openDetails(bk);
+    }));
+    document.querySelectorAll("#spot [data-gap]").forEach(b => b.addEventListener("click", () => {
+      const [pid, a, z] = b.dataset.gap.split("|");
+      const st = +a, en = Math.min(+z, st + s.maxH);
+      openBooking({ spot: s.id, place: pid, d: curDay, s: st, e: en }, "timeline_free");
+    }));
+    document.querySelectorAll("#spot [data-edit]").forEach(b => b.addEventListener("click", () => openBooking({ edit: bookings.find(x => x.id === +b.dataset.edit) }, "list_edit")));
+    document.querySelectorAll("#spot [data-cancel]").forEach(b => b.addEventListener("click", () => confirmCancel(bookings.find(x => x.id === +b.dataset.cancel))));
+    document.querySelectorAll("#spot [data-queue]").forEach(b => b.addEventListener("click", () => queue(bookings.find(x => x.id === +b.dataset.queue))));
+    document.querySelectorAll("#spot [data-opt]").forEach(b => b.addEventListener("click", () => {
+      const i = +b.dataset.opt;
+      if (s.poll.voted != null) s.poll.opts[s.poll.voted][1]--;
+      s.poll.voted = i; s.poll.opts[i][1]++; track("poll_vote", { spot: s.id, option: i }); renderSpot(); toast("Голос учтён");
+    }));
+    $("#bookBtn").addEventListener("click", () => openBooking({ spot: s.id, d: curDay }, "button"));
+    $("#reportBtn").addEventListener("click", () => openReport(s));
+    $("#favBtn").addEventListener("click", e => { const on = e.currentTarget.textContent.startsWith("☆"); e.currentTarget.textContent = on ? "★ Слежу" : "☆ Следить"; track("spot_follow", { spot: s.id, on }); toast(on ? "Будем присылать новости точки «" + s.name + "»" : "Больше не следите за точкой"); });
+    $("#chatForm").addEventListener("submit", e => { e.preventDefault(); const v = $("#chatIn").value.trim(); if (!v) return; s.chat.push([ME.n, "сейчас", v]); track("chat_send", { spot: s.id }); renderSpot(); $("#chat").scrollTop = 1e6; });
+    if (!closed) $("#quick").addEventListener("submit", e => { e.preventDefault(); quickBook(s, $("#quickIn").value); });
+  }
+
+  // ===== quick entry parser: «10.10 17-20 пушка» =====
+  function quickBook(s, text) {
+    const msg = $("#quickMsg"); msg.hidden = false; msg.className = "msg bad";
+    const t = text.toLowerCase().trim();
+    const fail = (m, why) => { msg.textContent = m; track("quick_entry", { ok: false, why, text: t }); };
+    if (!t) return fail("Напишите дату и время, например 10.10 17-20.", "empty");
+    if (/отмен/.test(t)) { msg.className = "msg"; msg.textContent = "Отменять ничего писать не нужно: нажмите «Отменить» у своей брони."; track("quick_entry", { ok: false, why: "cancel_word" }); return; }
+    const dm = t.match(/(\d{1,2})[.\/](\d{1,2})/);
+    const tm = t.replace(/(\d{1,2})[.\/](\d{1,2})/, " ").match(/(\d{1,2})(?:[:.](\d{2}))?\s*(?:-|–|—|до)\s*(\d{1,2})(?:[:.](\d{2}))?/);
+    if (!dm) return fail("Не нашёл дату. Пишите так: 10.10", "no_date");
+    if (!tm) return fail("Не нашёл время. Пишите так: 17-20 или 18:30-22:00", "no_time");
+    const date = new Date(2026, +dm[2] - 1, +dm[1]);
+    const d = Math.round((date - BASE) / 864e5);
+    if (isNaN(d) || d < 0 || d > 6) return fail("В концепте можно бронировать на неделю вперёд: с 6 по 12 октября.", "out_of_week");
+    const half = m => (m && +m >= 30 ? .5 : 0);
+    const st = +tm[1] + half(tm[2]);
+    let en = +tm[3] + half(tm[4]);
+    if (en <= st) en += 24;
+    const place = s.places.find(p => t.includes(p.name.toLowerCase().slice(0, 4))) || s.places[0];
+    msg.className = "msg"; msg.textContent = `Понял так: ${dLong(d)}, ${range(st, en)}, «${place.name}». Проверьте правила в окне брони.`;
+    track("quick_entry", { ok: true, text: t });
+    openBooking({ spot: s.id, place: place.id, d, s: st, e: en }, "quick_entry");
+  }
+
+  // ===== validation =====
+  function validate(b, excludeId) {
+    const s = spotById(b.spot), p = placeOf(s, b.place), out = [];
+    const push = (ok, text, warn) => out.push({ ok, text, warn });
+    if (isClosed(s)) push(false, "Точка закрыта");
+    if (b.e <= b.s) { push(false, "Время окончания должно быть позже начала"); return out; }
+    if (b.d === 0 && b.s < NOW_H) push(false, "Это время уже прошло: сейчас " + NOW_LABEL.split(", ")[1]);
+    const dur = b.e - b.s;
+    push(dur <= s.maxH, dur <= s.maxH ? `Длительность ${dur} ч — в пределах ${s.maxH} ч в день` : `${dur} ч — больше ${s.maxH} ч в день. Если очереди не будет, продлите бронь потом`);
+    const clash = bookings.find(x => x.id !== excludeId && x.spot === b.spot && x.place === b.place && x.d === b.d && overlaps(x, b));
+    push(!clash, clash ? `Пересекается с бронью: ${clash.mine ? "ваша" : clash.n}, ${range(clash.s, clash.e)}. Встаньте в очередь или выберите другое время` : "Не пересекается с другими бронями");
+    const mineSame = bookings.find(x => x.id !== excludeId && x.mine && x.spot === b.spot && x.d === b.d);
+    push(!mineSame, mineSame ? `У вас уже есть бронь на этот день: ${range(mineSame.s, mineSame.e)}. Две брони в день на точке нельзя` : "Одна бронь в день на этой точке");
+    const lim = p.endBy || s.endBy;
+    push(b.e <= lim, b.e <= lim ? `Заканчивается до ${fmt(lim)} — правило места соблюдено` : `«${p.name}»: строго до ${fmt(lim)}, после этого рядом жилые дома`);
+    if (s.id === "vaska" && b.e > 18 && b.e <= lim && ![20, 22].includes(b.e)) push(false, "Вечером бронь возможна только до 20:00 или до 22:00");
+    blocksFor(s, b.d).forEach(k => {
+      if (!overlaps(k, b)) return;
+      if (k.hard) push(false, `${WD[k.wd]} ${range(k.s, k.e)}: ${k.text}`);
+      else push(true, `${range(k.s, k.e)}: ${k.text}`, true);
+    });
+    if (b.amp && p.id === "cafe") push(true, "У «Кафе» играйте негромко и не направляйте звук на жилые дома", true);
+    return out;
+  }
+
+  // ===== dialogs =====
+  const dlg = $("#dlg"), body = $("#dlgBody");
+  function openDlg(html) { body.innerHTML = html; if (!dlg.open) dlg.showModal(); body.querySelector(".x")?.addEventListener("click", () => dlg.close()); }
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+  const timeOpts = (from, to, sel) => { let o = ""; for (let h = from; h <= to; h += .5) o += `<option value="${h}" ${h === sel ? "selected" : ""}>${fmt(h)}${h >= 24 ? " (ночь)" : ""}</option>`; return o; };
+
+  function openBooking(pre, source) {
+    const edit = pre.edit || null;
+    const b0 = edit ? { ...edit } : { spot: pre.spot || curSpot, place: pre.place, d: pre.d ?? curDay, s: pre.s ?? 18, e: pre.e ?? 20, amp: false };
+    const s0 = spotById(b0.spot);
+    if (!b0.place) b0.place = s0.places[0].id;
+    track("booking_open", { source: source || "other", spot: b0.spot, edit: !!edit });
+    openDlg(`
+      <header><div><h2>${edit ? "Изменить бронь" : "Забронировать"}</h2><p>${edit ? "Очередь и все, кто следит за точкой, получат уведомление об изменении." : "Сайт сразу проверит правила точки и пересечения."}</p></div><button class="x" type="button" aria-label="Закрыть">×</button></header>
+      <form id="bf" class="fields">
+        <div class="field full"><label for="bf-spot">Точка</label><select id="bf-spot">${SPOTS.filter(s => !isClosed(s)).map(s => `<option value="${s.id}" ${s.id === b0.spot ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select></div>
+        <div class="field"><label for="bf-place">Место</label><select id="bf-place"></select></div>
+        <div class="field"><label for="bf-day">День</label><select id="bf-day">${Array.from({ length: 7 }, (_, i) => `<option value="${i}" ${i === b0.d ? "selected" : ""}>${dLong(i)}</option>`).join("")}</select></div>
+        <div class="field"><label for="bf-s">С</label><select id="bf-s">${timeOpts(10, 24.5, b0.s)}</select></div>
+        <div class="field"><label for="bf-e">До</label><select id="bf-e">${timeOpts(11, 26, b0.e)}</select></div>
+        <div class="field"><span class="lbl">Звук</span><div class="seg-ctl"><label><input type="radio" name="amp" value="0" ${!b0.amp ? "checked" : ""}>акустика</label><label><input type="radio" name="amp" value="1" ${b0.amp ? "checked" : ""}>с колонкой</label></div></div>
+        <div class="field"><label for="bf-name">Кто выступает</label><input type="text" id="bf-name" value="${esc(ME.n)}"></div>
+        <div class="full field"><span class="lbl">Проверка правил</span><ul class="checks" id="bf-checks"></ul></div>
+        <div class="full" style="display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap">
+          ${edit ? '<button class="btn danger" type="button" id="bf-cancel">Отменить бронь</button>' : "<span></span>"}
+          <div style="display:flex; gap:8px"><button class="btn" type="button" id="bf-close">Назад</button><button class="btn primary" type="submit" id="bf-ok">${edit ? "Сохранить" : "Забронировать"}</button></div>
+        </div>
+      </form>`);
+    const fillPlaces = () => { const s = spotById($("#bf-spot").value); $("#bf-place").innerHTML = s.places.map(p => `<option value="${p.id}" ${p.id === b0.place ? "selected" : ""}>${esc(p.name)}</option>`).join(""); };
+    const read = () => ({ spot: $("#bf-spot").value, place: $("#bf-place").value, d: +$("#bf-day").value, s: +$("#bf-s").value, e: +$("#bf-e").value, amp: body.querySelector('input[name="amp"]:checked').value === "1" });
+    let lastBad = "";
+    const check = () => {
+      const res = validate(read(), edit ? edit.id : null);
+      $("#bf-checks").innerHTML = res.map(r => `<li class="${!r.ok ? "bad" : r.warn ? "warn" : "ok"}">${esc(r.text)}</li>`).join("");
+      $("#bf-ok").disabled = res.some(r => !r.ok);
+      const bad = res.filter(r => !r.ok).map(r => r.text).join(" | ");
+      if (bad && bad !== lastBad) track("booking_rule_hit", { rules: bad });
+      lastBad = bad;
+    };
+    fillPlaces(); check();
+    $("#bf-spot").addEventListener("change", () => { fillPlaces(); check(); });
+    body.querySelectorAll("select, input").forEach(el => el.addEventListener("change", check));
+    $("#bf-close").addEventListener("click", () => dlg.close());
+    if (edit) $("#bf-cancel").addEventListener("click", () => confirmCancel(edit));
+    $("#bf").addEventListener("submit", e => {
+      e.preventDefault();
+      const nb = read();
+      if (validate(nb, edit ? edit.id : null).some(r => !r.ok)) return;
+      const name = $("#bf-name").value.trim() || ME.n;
+      if (edit) Object.assign(edit, nb, { n: name });
+      else add(Object.assign(nb, { n: name, g: ME.g, mine: true }));
+      track(edit ? "booking_edited" : "booking_created", { spot: nb.spot, place: nb.place, day: nb.d, hours: nb.e - nb.s });
+      dlg.close(); curSpot = nb.spot; curDay = nb.d; renderAll();
+      const sp = spotById(nb.spot), where = `${sp.name}, «${placeOf(sp, nb.place).name}», ${dShort(nb.d)} ${range(nb.s, nb.e)}`;
+      if (edit) { addNote({ kind: "Изменение", title: "Бронь перенесена: " + where, text: "Старое время освободилось, очередь получила уведомление." }); toast("Бронь изменена"); }
+      else { addNote({ kind: "Бронь", title: "Вы забронировали: " + where, text: "Напомним за 2 часа. Отменить без минуса к рейтингу можно до " + fmt(Math.max(nb.s - 3, 0)) + "." }); toast("Готово: " + where); }
+    });
+  }
+
+  function confirmCancel(b) {
+    if (!b) return;
+    const s = spotById(b.spot);
+    openDlg(`<header><div><h2>Отменить бронь?</h2><p>${esc(s.name)}, «${esc(placeOf(s, b.place).name)}», ${dLong(b.d)}, ${range(b.s, b.e)}</p></div><button class="x" type="button" aria-label="Закрыть">×</button></header>
+      <p style="margin:0;color:var(--muted)">Время освободится, первый в очереди получит уведомление. Ничего дописывать и удалять вручную не нужно.</p>
+      <footer><button class="btn" type="button" id="cc-no">Оставить</button><button class="btn primary" type="button" id="cc-yes">Да, отменить</button></footer>`);
+    $("#cc-no").addEventListener("click", () => dlg.close());
+    $("#cc-yes").addEventListener("click", () => {
+      const i = bookings.indexOf(b); if (i >= 0) bookings.splice(i, 1);
+      track("booking_cancelled", { spot: b.spot });
+      dlg.close(); renderAll();
+      addNote({ kind: "Отмена", title: "Бронь отменена: " + s.name + ", " + dShort(b.d) + " " + range(b.s, b.e), text: "Время снова свободно, очередь получила уведомление." });
+      toast("Бронь отменена, время свободно");
+    });
+  }
+
+  function queue(b) {
+    if (!b) return;
+    const s = spotById(b.spot);
+    track("queue_join", { spot: b.spot });
+    addNote({ kind: "Очередь", title: "Вы в очереди: " + s.name + ", " + dShort(b.d) + " " + range(b.s, b.e), text: "Если " + b.n + " отменит бронь, время на 30 минут закрепится за вами." });
+    toast("Вы в очереди. Уведомим, если время освободится");
+  }
+
+  function openDetails(b) {
+    const s = spotById(b.spot);
+    track("booking_details", { spot: b.spot });
+    openDlg(`<header><div><h2>${esc(b.n)}</h2><p>${esc(b.g)}</p></div><button class="x" type="button" aria-label="Закрыть">×</button></header>
+      <dl class="kv"><dt>Точка</dt><dd>${esc(s.name)}, «${esc(placeOf(s, b.place).name)}»</dd><dt>Когда</dt><dd>${dLong(b.d)}, ${range(b.s, b.e)}</dd><dt>Звук</dt><dd>${b.amp ? "с колонкой" : "акустика"}</dd><dt>Надёжность</dt><dd>${88 + (b.id % 12)}%</dd></dl>
+      <footer><button class="btn" type="button" data-a="msg">Написать</button><button class="btn" type="button" data-a="swap">Предложить обмен</button><button class="btn primary" type="button" data-a="queue">Встать в очередь</button></footer>`);
+    body.querySelectorAll("[data-a]").forEach(x => x.addEventListener("click", () => {
+      dlg.close();
+      if (x.dataset.a === "queue") queue(b);
+      if (x.dataset.a === "swap") { track("swap_offer"); toast("Концепт: " + b.n + " получил бы предложение обмена"); }
+      if (x.dataset.a === "msg") { track("message_artist"); toast("Концепт: откроется личный чат или диалог ВКонтакте"); }
+    }));
+  }
+
+  function openReport(s) {
+    track("report_open", { spot: s.id });
+    openDlg(`<header><div><h2>Проблема на точке</h2><p>${esc(s.name)}. Увидят смотритель и все, у кого здесь бронь сегодня.</p></div><button class="x" type="button" aria-label="Закрыть">×</button></header>
+      <form id="rf" style="display:grid; gap:12px">
+        <div class="reasons">
+          <label><input type="radio" name="r" value="Кто-то играет без брони и не идёт на контакт" checked> Кто-то играет без брони и не идёт на контакт</label>
+          <label><input type="radio" name="r" value="Точка временно не работает"> Точка временно не работает (ремонт, мероприятие)</label>
+          <label><input type="radio" name="r" value="Жалобы жителей или охраны"> Жалобы жителей или охраны</label>
+          <label><input type="radio" name="r" value="Проверка полиции"> Проверка полиции</label>
+          <label><input type="radio" name="r" value="Предлагаю новую точку"> Предложить новую точку</label>
+        </div>
+        <div class="field"><label for="rf-t">Подробности</label><textarea id="rf-t" placeholder="Что случилось, когда, нужна ли помощь"></textarea></div>
+        <footer><button class="btn" type="button" id="rf-no">Назад</button><button class="btn primary" type="submit">Отправить</button></footer>
+      </form>`);
+    $("#rf-no").addEventListener("click", () => dlg.close());
+    $("#rf").addEventListener("submit", e => {
+      e.preventDefault();
+      const r = body.querySelector('input[name="r"]:checked').value;
+      track("report_sent", { spot: s.id, reason: r, text: $("#rf-t").value.slice(0, 500) });
+      dlg.close(); addNote({ kind: "Проблема на точке", alert: true, title: s.name + ": " + r.toLowerCase(), text: "Вы сообщили о проблеме. Смотритель и музыканты с бронью получили уведомление." });
+      toast("Отправлено смотрителю и музыкантам точки");
+    });
+  }
+
+  // ===== my bookings =====
+  function renderMine() {
+    const mine = bookings.filter(b => b.mine).sort((a, b) => a.d - b.d || a.s - b.s);
+    $("#myList").innerHTML = mine.length ? mine.map(b => {
+      const s = spotById(b.spot), dd = dayDate(b.d);
+      return `<article class="panel booking">
+        <div class="when"><small>${WD[dd.getDay()]}</small><b>${dd.getDate()}</b><span>окт</span></div>
+        <div><h3>${dotsHtml(s)}${esc(s.name)}</h3><p>«${esc(placeOf(s, b.place).name)}» · <span class="mono">${range(b.s, b.e)}</span> · ${b.amp ? "с колонкой" : "акустика"}${b.d === 0 ? " · <b style='color:var(--ok)'>сегодня</b>" : ""}</p>
+          <div class="actions"><button class="btn sm" type="button" data-medit="${b.id}">Изменить</button><button class="btn sm" type="button" data-mgo="${b.id}">Открыть точку</button><button class="btn sm danger" type="button" data-mcancel="${b.id}">Отменить</button></div></div>
+      </article>`;
+    }).join("") : `<div class="panel empty">Пока нет броней. Выберите точку и свободное время.</div>`;
+    const find = id => bookings.find(x => x.id === +id);
+    document.querySelectorAll("[data-medit]").forEach(b => b.addEventListener("click", () => openBooking({ edit: find(b.dataset.medit) }, "my_bookings")));
+    document.querySelectorAll("[data-mcancel]").forEach(b => b.addEventListener("click", () => confirmCancel(find(b.dataset.mcancel))));
+    document.querySelectorAll("[data-mgo]").forEach(b => b.addEventListener("click", () => { const x = find(b.dataset.mgo); curSpot = x.spot; curDay = x.d; renderAll(); showTab("spots"); window.scrollTo({ top: 0 }); }));
+  }
+
+  // ===== notifications =====
+  function renderNotes() {
+    const unread = notes.filter(n => n.unread).length;
+    const bd = $("#badge"); bd.textContent = unread; bd.hidden = unread === 0;
+    $("#notes").innerHTML = notes.map((n, i) => `<div class="note ${n.unread ? "unread" : ""}"><span class="mark"></span>
+      <div><span class="kind ${n.alert ? "alert" : ""}">${esc(n.kind)}</span><h3>${esc(n.title)}</h3><p>${esc(n.text)}</p>
+      ${n.acts ? `<div class="acts">${n.acts.map(([l, a], j) => `<button class="btn sm ${j === 0 ? "primary" : ""}" type="button" data-n="${i}" data-na="${a}">${l}</button>`).join("")}</div>` : ""}</div>
+      <time>${esc(n.t)}</time></div>`).join("");
+    document.querySelectorAll("[data-na]").forEach(b => b.addEventListener("click", () => noteAction(+b.dataset.n, b.dataset.na)));
+  }
+  function noteAction(i, a) {
+    const n = notes[i]; n.unread = false;
+    track("notification_action", { action: a });
+    if (a === "confirm") { n.acts = null; toast("Отлично, ждём вас в 18:00 у метро"); }
+    if (a === "cancelToday") { const b = bookings.find(x => x.mine && x.d === 0 && x.spot === "vaska"); if (b) confirmCancel(b); else toast("Эта бронь уже отменена"); }
+    if (a === "takeFree") { n.acts = null; curSpot = "spas"; curDay = 1; showTab("spots", true); renderAll(); openBooking({ spot: "spas", place: "cafe", d: 1, s: 19, e: 22 }, "notification"); }
+    if (a === "openPoll") { n.acts = null; curSpot = "vaska"; showTab("spots", true); renderAll(); setTimeout(() => $("#poll")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50); }
+    renderNotes();
+  }
+  $("#readAll").addEventListener("click", () => { notes.forEach(n => n.unread = false); renderNotes(); toast("Все уведомления прочитаны"); });
+  document.querySelectorAll(".switch input").forEach(c => c.addEventListener("change", () => { track("notify_setting", { id: c.id, on: c.checked }); toast(c.checked ? "Включено" : "Выключено"); }));
+
+  // ===== listener preview =====
+  function renderGigs() {
+    const list = bookings.filter(b => b.d === 0 && b.e > NOW_H).sort((a, b) => a.s - b.s).slice(0, 24);
+    $("#gigs").innerHTML = list.map(b => { const s = spotById(b.spot); return `<article class="panel gig">
+      <span class="t ${isLive(b) ? "live" : ""}">${isLive(b) ? "● играет сейчас · до " + fmt(b.e) : range(b.s, b.e)}</span>
+      <h3>${esc(b.n)}</h3><p>${dotsHtml(s)}${esc(s.name)} · ${esc(b.g)}</p>
+      <div><button class="btn sm" type="button" data-stub="Подписка на артиста: уведомление, когда он забронирует точку">Подписаться</button></div></article>`; }).join("");
+    bindStubs($("#gigs"));
+  }
+
+  function bindStubs(root) { root.querySelectorAll("[data-stub]").forEach(b => b.addEventListener("click", () => { track("stub_click", { what: b.dataset.stub.slice(0, 60) }); toast("Концепт. " + b.dataset.stub); })); }
+  bindStubs(document);
+  document.querySelectorAll(".legal-nav a, details.faq summary").forEach(el => el.addEventListener("click", () => track("legal_click", { what: el.textContent.trim().slice(0, 60) })));
+  $("#askForm").addEventListener("submit", e => { e.preventDefault(); track("lawyer_question", { text: $("#askText").value.slice(0, 500) }); toast("Концепт: вопрос пока никуда не отправляется"); });
+  $("#feedback").addEventListener("submit", e => {
+    e.preventDefault();
+    const text = $("#fbText").value.trim();
+    if (!text) { toast("Напишите пару слов — это поможет сделать сайт лучше"); return; }
+    track("feedback", { text: text.slice(0, 1000), who: $("#fbWho").value.trim().slice(0, 120) });
+    $("#fbText").value = "";
+    toast(window.METRIKA_ID ? "Спасибо! Отзыв получен" : "Концепт: отзыв пока никуда не отправляется");
+  });
+
+  function renderAll() { renderStats(); renderSpotList(); renderSpot(); renderMine(); renderNotes(); }
+  renderLineFilter(); renderAll();
+  const hash = (location.hash || "").replace("#", "");
+  let start = views.includes(hash) ? hash : null;
+  if (!start) { try { start = localStorage.getItem("pm2-tab"); } catch (e) {} }
+  showTab(start || "spots", true);
+})();
+</script>
