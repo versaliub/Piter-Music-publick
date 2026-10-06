@@ -17,8 +17,34 @@
     ym(window.METRIKA_ID, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
   }
   // Цели: каждое действие в концепте отправляется в Метрику как цель с параметрами
+  // Каждое действие уходит двумя способами:
+  //  • цель (reachGoal) — для отчёта «Конверсии», если цель создана в настройках счётчика;
+  //  • параметр визита — виден сразу, без настройки: Отчёты → Содержание → Параметры визитов.
+  var GOAL_NAMES = {
+    tab_spots: "Открыл «Точки и запись»", tab_mine: "Открыл «Мои записи»", tab_notify: "Открыл «Уведомления»", tab_legal: "Открыл «Юрпомощь»",
+    listener_mode: "Смотрел режим «Слушателям»", spot_open: "Открыл точку", spot_search: "Искал точку", line_filter: "Фильтр по линии",
+    day_select: "Выбрал день", booking_open: "Открыл окно брони", booking_rule_hit: "Упёрся в правило точки",
+    booking_created: "Забронировал", booking_edited: "Изменил бронь", booking_cancelled: "Отменил бронь", booking_details: "Смотрел чужую бронь",
+    quick_entry: "Быстрая бронь текстом", queue_join: "Встал в очередь", swap_offer: "Предложил обмен", message_artist: "Написать музыканту",
+    poll_vote: "Проголосовал", chat_send: "Написал в чат точки", spot_follow: "Следить за точкой",
+    report_open: "Открыл «Сообщить о проблеме»", report_sent: "Сообщил о проблеме", notification_action: "Нажал в уведомлении",
+    notify_setting: "Настройки уведомлений", legal_click: "Читал юрпомощь", lawyer_question: "Вопрос юристу",
+    feedback: "ОТЗЫВ", stub_click: "Нажал на заглушку", demo_reset: "Сбросил демо-данные"
+  };
   window.track = function (goal, params) {
-    try { if (window.METRIKA_ID && window.ym) window.ym(window.METRIKA_ID, "reachGoal", goal, params || {}); } catch (e) {}
+    try {
+      if (!window.METRIKA_ID || !window.ym) return;
+      params = params || {};
+      window.ym(window.METRIKA_ID, "reachGoal", goal, params);
+      var name = GOAL_NAMES[goal] || goal, node = {};
+      if (goal === "feedback" || goal === "lawyer_question") {
+        node[name] = {}; node[name][params.text || "(пусто)"] = params.who || "без подписи";
+      } else {
+        var keys = Object.keys(params);
+        node[name] = keys.length ? keys.map(function (k) { return k + ": " + params[k]; }).join(", ") : 1;
+      }
+      window.ym(window.METRIKA_ID, "params", { "Действия на сайте": node });
+    } catch (e) {}
   };
 </script>
 <noscript><div><img src="https://mc.yandex.ru/watch/113474600" style="position:absolute; left:-9999px;" alt=""></div></noscript>
@@ -410,7 +436,7 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 
-<div class="ribbon"><div class="wrap"><p>Концепт сайта, версия 2: данные выдуманы, кнопки работают понарошку, после перезагрузки всё сбросится</p></div></div>
+<div class="ribbon"><div class="wrap"><p>Концепт сайта: данные выдуманы. Ваши брони сохраняются в этом браузере, другие люди их пока не видят. <button type="button" id="resetDemo" style="border:0;background:transparent;text-decoration:underline;font:inherit;color:inherit;padding:0;cursor:pointer">Сбросить демо</button></p></div></div>
 
 <header class="top">
   <div class="wrap">
@@ -661,7 +687,7 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
 
 <footer class="site">
   <div class="wrap">
-    <span>Piter Music · концепт v2 · октябрь 2026</span>
+    <span>Piter Music · концепт v3 · октябрь 2026</span>
     <span>Вход — по приглашению из сообщества «Уличные выступления СПб»</span>
   </div>
 </footer>
@@ -671,7 +697,13 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
 
 <script>
 (function () {
-  const track = window.track || function () {};
+  // в Метрику уходят понятные названия точек и дней, а не коды
+  const track = (goal, params) => {
+    const p = Object.assign({}, params || {});
+    if (p.spot) { const sp = SPOTS.find(x => x.id === p.spot); if (sp) p.spot = sp.name; }
+    if (typeof p.day === "number") p.day = dShort(p.day);
+    (window.track || function () {})(goal, p);
+  };
 
   // ===== время и даты (демо: «сейчас» = вт 6 октября 2026, 16:05) =====
   const NOW_H = 16 + 5 / 60;
@@ -815,6 +847,10 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
       }
     });
   });
+  // ===== сохранение в браузере (localStorage) =====
+  const STORE_KEY = "pm-demo-v3";
+  let loaded = null;
+  try { loaded = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) {}
   // окно, о котором уведомление: Спас, Кафе, завтра 19–22 свободно
   for (let i = bookings.length - 1; i >= 0; i--) { const b = bookings[i]; if (b.spot === "spas" && b.place === "cafe" && b.d === 1 && overlaps(b, { s: 19, e: 22 })) bookings.splice(i, 1); }
 
@@ -825,6 +861,24 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
     { kind: "Проблема на точке", alert: true, t: "13:12", unread: false, title: "Василеостровская: у метро играет человек без брони", text: "На разговор не идёт, ведёт себя агрессивно. Не вступайте в конфликт, пишите в чат точки. Смотритель в курсе." },
     { kind: "Точка закрыта", alert: true, t: "вчера", unread: false, title: "Парк Победы закрыт на реконструкцию", text: "Все брони на точке сняты. Когда точку откроют, придёт уведомление." },
   ];
+
+  if (loaded && loaded.bookings) {
+    bookings.length = 0; loaded.bookings.forEach(b => bookings.push(b));
+    uid = loaded.uid || bookings.reduce((m, b) => Math.max(m, b.id), 0) + 1;
+    if (loaded.notes) { notes.length = 0; loaded.notes.forEach(n => notes.push(n)); }
+    SPOTS.forEach(s => {
+      const x = loaded.spots && loaded.spots[s.id]; if (!x) return;
+      if (x.chat) s.chat = x.chat;
+      if (x.poll && s.poll) { s.poll.opts = x.poll.opts; s.poll.voted = x.poll.voted; }
+    });
+  }
+  function save() {
+    try {
+      const spots = {};
+      SPOTS.forEach(s => { spots[s.id] = { chat: s.chat, poll: s.poll ? { opts: s.poll.opts, voted: s.poll.voted } : null }; });
+      localStorage.setItem(STORE_KEY, JSON.stringify({ bookings, uid, notes, spots }));
+    } catch (e) {}
+  }
 
   // ===== helpers =====
   const $ = s => document.querySelector(s);
@@ -909,6 +963,7 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
   const pct = h => ((Math.min(Math.max(h, T0), T1) - T0) / (T1 - T0) * 100);
 
   function renderSpot() {
+    save();
     const s = spotById(curSpot);
     const closed = isClosed(s);
     const dayCounts = Array.from({ length: 7 }, (_, d) => bookings.filter(b => b.spot === s.id && b.d === d).length);
@@ -1215,6 +1270,7 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
 
   // ===== notifications =====
   function renderNotes() {
+    save();
     const unread = notes.filter(n => n.unread).length;
     const bd = $("#badge"); bd.textContent = unread; bd.hidden = unread === 0;
     $("#notes").innerHTML = notes.map((n, i) => `<div class="note ${n.unread ? "unread" : ""}"><span class="mark"></span>
@@ -1248,7 +1304,7 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
   function bindStubs(root) { root.querySelectorAll("[data-stub]").forEach(b => b.addEventListener("click", () => { track("stub_click", { what: b.dataset.stub.slice(0, 60) }); toast("Концепт. " + b.dataset.stub); })); }
   bindStubs(document);
   document.querySelectorAll(".legal-nav a, details.faq summary").forEach(el => el.addEventListener("click", () => track("legal_click", { what: el.textContent.trim().slice(0, 60) })));
-  $("#askForm").addEventListener("submit", e => { e.preventDefault(); track("lawyer_question", { text: $("#askText").value.slice(0, 500) }); toast("Концепт: вопрос пока никуда не отправляется"); });
+  $("#askForm").addEventListener("submit", e => { e.preventDefault(); track("lawyer_question", { text: $("#askText").value.slice(0, 500) }); $("#askText").value = ""; toast(window.METRIKA_ID ? "Вопрос получен. Пока это концепт, ответ придёт позже" : "Концепт: вопрос пока никуда не отправляется"); });
   $("#feedback").addEventListener("submit", e => {
     e.preventDefault();
     const text = $("#fbText").value.trim();
@@ -1259,6 +1315,11 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
   });
 
   function renderAll() { renderStats(); renderSpotList(); renderSpot(); renderMine(); renderNotes(); }
+  $("#resetDemo").addEventListener("click", () => {
+    track("demo_reset");
+    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    location.reload();
+  });
   renderLineFilter(); renderAll();
   const hash = (location.hash || "").replace("#", "");
   let start = views.includes(hash) ? hash : null;
