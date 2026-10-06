@@ -29,6 +29,7 @@
     poll_vote: "Проголосовал", chat_send: "Написал в чат точки", spot_follow: "Следить за точкой",
     report_open: "Открыл «Сообщить о проблеме»", report_sent: "Сообщил о проблеме", notification_action: "Нажал в уведомлении",
     notify_setting: "Настройки уведомлений", legal_click: "Читал юрпомощь", lawyer_question: "Вопрос юристу",
+    survey_idea: "ОПРОС: нравится идея?", survey_support: "ОПРОС: как готовы поддержать?",
     feedback: "ОТЗЫВ", stub_click: "Нажал на заглушку", demo_reset: "Сбросил демо-данные"
   };
   window.track = function (goal, params) {
@@ -37,7 +38,9 @@
       params = params || {};
       window.ym(window.METRIKA_ID, "reachGoal", goal, params);
       var name = GOAL_NAMES[goal] || goal, node = {};
-      if (goal === "feedback" || goal === "lawyer_question") {
+      if (goal.indexOf("survey_") === 0) {
+        node[name] = params.answer;
+      } else if (goal === "feedback" || goal === "lawyer_question") {
         node[name] = {}; node[name][params.text || "(пусто)"] = params.who || "без подписи";
       } else {
         var keys = Object.keys(params);
@@ -295,6 +298,13 @@ main .wrap { padding-block: 24px 48px; }
 .cmp div:last-child::before { content: "Сайт: "; font: 600 11px var(--f-mono); color: var(--ok); }
 @media (max-width: 600px) { .cmp { grid-template-columns: minmax(0, 1fr); } .cmp div:first-child { border-right: 0; padding-bottom: 2px; } }
 
+.survey { padding: 18px; display: grid; gap: 12px; border: 2px solid var(--ochre); }
+.survey h2 { font: 700 clamp(17px, 2.4vw, 20px)/1.3 var(--f-display); }
+.survey p { margin: 0; color: var(--muted); font-size: 14px; max-width: 70ch; }
+.survey .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.survey .opts .btn { font-size: 15px; }
+.survey .opts .btn[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.survey .done { font-weight: 600; color: var(--ok); }
 .feedback { padding: 18px; display: grid; gap: 12px; }
 .feedback h2 { font: 700 18px/1.3 var(--f-display); }
 .feedback p { margin: 0; color: var(--muted); font-size: 14px; }
@@ -475,6 +485,28 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
           <p>Те же точки, что в обсуждениях сообщества, только вместо ленты комментариев — расписание. Сайт сам проверяет правила точки и пересечения броней. <a href="#compare">Чем это удобнее обсуждений ВК</a></p>
         </div>
       </div>
+      <section class="panel survey" id="survey" aria-labelledby="surveyTitle">
+        <div id="sq1">
+          <h2 id="surveyTitle">Нравится идея такого сайта?</h2>
+          <p>Ответ анонимный. По ответам станет понятно, стоит ли делать сайт и приложение по-настоящему.</p>
+        </div>
+        <div class="opts" id="sq1opts">
+          <button class="btn" type="button" data-idea="Да, нужен">Да, нужен</button>
+          <button class="btn" type="button" data-idea="Не уверен">Не уверен</button>
+          <button class="btn" type="button" data-idea="Нет, не нужен">Нет, не нужен</button>
+        </div>
+        <div id="sq2" hidden>
+          <h2>Как готовы поддержать разработку?</h2>
+          <p>Пока сайт делается на энтузиазме. Чтобы запустить его для всех, нужны деньги на сервер и время на работу.</p>
+        </div>
+        <div class="opts" id="sq2opts" hidden>
+          <button class="btn" type="button" data-support="Донатами, сколько не жалко">Донатами, сколько не жалко</button>
+          <button class="btn" type="button" data-support="Разовым взносом на запуск">Разовым взносом на запуск</button>
+          <button class="btn" type="button" data-support="Пока не готов">Пока не готов</button>
+        </div>
+        <p class="done" id="sqDone" hidden>Спасибо, ваш ответ учтён! Ниже можно потыкать сам концепт.</p>
+      </section>
+
       <div class="stats" id="stats"></div>
 
       <div class="work">
@@ -1315,6 +1347,28 @@ footer.site .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 8p
   });
 
   function renderAll() { renderStats(); renderSpotList(); renderSpot(); renderMine(); renderNotes(); }
+  // ===== опрос: ответ уходит в Метрику, в браузере запоминаем, что человек уже ответил =====
+  const SURVEY_KEY = "pm-survey";
+  let survey = {};
+  try { survey = JSON.parse(localStorage.getItem(SURVEY_KEY) || "{}"); } catch (e) {}
+  function renderSurvey() {
+    document.querySelectorAll("[data-idea]").forEach(b => { b.setAttribute("aria-pressed", b.dataset.idea === survey.idea); b.disabled = !!survey.idea; });
+    document.querySelectorAll("[data-support]").forEach(b => { b.setAttribute("aria-pressed", b.dataset.support === survey.support); b.disabled = !!survey.support; });
+    const askSupport = !!survey.idea && survey.idea !== "Нет, не нужен";
+    $("#sq2").hidden = $("#sq2opts").hidden = !askSupport;
+    $("#sqDone").hidden = !(survey.idea && (survey.support || !askSupport));
+  }
+  const saveSurvey = () => { try { localStorage.setItem(SURVEY_KEY, JSON.stringify(survey)); } catch (e) {} };
+  document.querySelectorAll("[data-idea]").forEach(b => b.addEventListener("click", () => {
+    if (survey.idea) return;
+    survey.idea = b.dataset.idea; saveSurvey(); track("survey_idea", { answer: survey.idea }); renderSurvey();
+  }));
+  document.querySelectorAll("[data-support]").forEach(b => b.addEventListener("click", () => {
+    if (survey.support) return;
+    survey.support = b.dataset.support; saveSurvey(); track("survey_support", { answer: survey.support }); renderSurvey();
+  }));
+  renderSurvey();
+
   $("#resetDemo").addEventListener("click", () => {
     track("demo_reset");
     try { localStorage.removeItem(STORE_KEY); } catch (e) {}
