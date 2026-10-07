@@ -36,7 +36,8 @@
     try {
       if (!window.METRIKA_ID || !window.ym) return;
       params = params || {};
-      window.ym(window.METRIKA_ID, "reachGoal", goal, params);
+      // цель без параметров: иначе сырые ключи (day, spot, answer…) засоряют отчёт «Параметры визитов»
+      window.ym(window.METRIKA_ID, "reachGoal", goal);
       var name = GOAL_NAMES[goal] || goal, node = {};
       if (goal.indexOf("survey_") === 0) {
         node[name] = params.answer;
